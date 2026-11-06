@@ -1,0 +1,107 @@
+#!/bin/bash 
+
+SCRIPT_PATH="$0"
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+VENV_PATH="__VENV_PATH__"
+
+# Check venv path
+if ! [ -d "$VENV_PATH" ]; then
+   echo "ERROR: Unable to find msspec!!"
+   exit 1
+fi
+
+launch_script() {
+   . "$VENV_PATH/bin/activate" && python "$@"
+}
+
+show_version () {
+    . "$VENV_PATH/bin/activate" && python -c "import msspec; print(msspec.__version__)"
+}
+
+show_help () {
+   echo "Usage: 1) $SCRIPT_NAME -p [PYTHON OPTIONS] SCRIPT [ARGUMENTS...]"
+   echo "       2) $SCRIPT_NAME [-l FILE | -i | -h]"
+   echo "       3) eval \$($SCRIPT_NAME -e)"
+   echo ""
+   echo "Form (1) is used to launch a script"
+   echo "Form (2) is used to load a hdf5 data file"
+   echo "Form (3) is used to activate the msspec virtual environment"
+   echo ""
+   echo "List of possible options:"
+   echo "    -p   Pass every arguments after this option to the msspec"
+   echo "         virtual environment Python interpreter."
+   echo "    -i   Run the interactive Python interpreter within msspec"
+   echo "         virtual environment."
+   echo "    -l   Load and display a *.hdf5 data file in a graphical"
+   echo "         window."
+   echo "    -v   Print the version."
+   echo "    -h   Show this help message."
+}
+
+launch_interpreter() {
+     source $VENV_PATH/bin/activate
+     echo "Python interpreter of the MsSpec virtual environment."
+     echo ""
+     echo "This environment includes the following packages:"
+     pip list
+     echo ""
+     echo "Type in <CTRL>+D to exit."
+     echo ""
+     ipython --profile=msspec
+}
+
+load_data() {
+   . "$VENV_PATH/bin/activate" && python -m msspec.iodata $1
+}
+
+read_yes_no () {
+    PROMPT="$1"
+    DEFAULT="$2"
+    BYPASS="$3"
+
+    ANSWER=""
+    RESPONSE=""
+
+    VALID=1
+    while test $VALID -ne 0; do
+        test "$BYPASS" = "y" || read -p "${PROMPT} (y/n) [${DEFAULT}]? " "RESPONSE"
+        ANSWER="${RESPONSE:-${DEFAULT}}"
+        case "${ANSWER}" in
+            y|n) VALID=0 ;;
+            *) echo "Invalid choice, please answer \"y\" or \"n\"."; VALID=1 ;;
+        esac
+    done
+}
+
+uninstall() {
+   read_yes_no "This will completely remove msspec from your computer. Are you sure" "n" "$BYPASS"
+   case "${ANSWER}" in
+      y) rm -rv "$VENV_PATH" && rm "$SCRIPT_PATH" && echo "MsSpec successfully uninstalled." ;;
+      n) echo "Uninstallation aborted." ;;
+   esac
+}
+
+
+
+while getopts "hvil:p:eu" option; do
+   case $option in
+      p) shift; launch_script "$@"
+         ;;
+      i) launch_interpreter
+         ;;
+      l) load_data "$OPTARG"; shift
+         ;;
+      e) echo ". $VENV_PATH/bin/activate"
+         ;;
+      u) uninstall
+         ;;
+      v) show_version
+         ;;
+      *|h) show_help
+         ;;
+   esac
+done
+
+if [ $OPTIND -eq 1 ]; then 
+   show_help
+fi

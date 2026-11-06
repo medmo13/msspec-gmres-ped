@@ -1,0 +1,101 @@
+mat_id,run_tag,formula,name,prototype,surface_orientation,orientation_class,level,absorber_idx,ke,phi,radius,natoms,lmax,rho_G0T,group,source
+M001,W_E6.0_p6,,W,,,,,,6.0,,,95,,4.56934,high,msspec_SE high_rho (D11)
+M002,W_E5.0_p6,,W,,,,,,5.0,,,95,,4.39359,high,msspec_SE high_rho (D11)
+M003,W_E7.0_p6,,W,,,,,,7.0,,,95,,4.36032,high,msspec_SE high_rho (D11)
+M004,Ni_E5.0_p6,,Ni,,,,,,5.0,,,183,,4.25799,high,msspec_SE high_rho (D11)
+M005,Rh_E27.0_p6,,Rh,,,,,,27.0,,,183,,4.08842,high,msspec_SE high_rho (D11)
+M006,Rh_E28.0_p6,,Rh,,,,,,28.0,,,183,,4.07652,high,msspec_SE high_rho (D11)
+M007,Ir_E26.0_p6,,Ir,,,,,,26.0,,,183,,4.03709,high,msspec_SE high_rho (D11)
+M008,Rh_E26.0_p6,,Rh,,,,,,26.0,,,183,,4.03376,high,msspec_SE high_rho (D11)
+M009,Ir_E27.7_p6,,Ir,,,,,,27.7,,,183,,3.94854,high,msspec_SE high_rho (D11)
+M010,Al_E5.0_p6,,Al,,,,,,5.0,,,183,,3.73067,high,msspec_SE high_rho (D11)
+M011,Mo_E5.0_p6,,Mo,,,,,,5.0,,,95,,3.72813,high,msspec_SE high_rho (D11)
+M012,Ir_E23.0_p6,,Ir,,,,,,23.0,,,183,,3.64818,high,msspec_SE high_rho (D11)
+M013,Pd_E5.0_p6,,Pd,,,,,,5.0,,,183,,3.6259,high,msspec_SE high_rho (D11)
+M014,SrTiO3_E5.0_p6,,SrTiO3,,,,,,5.0,,,211,,3.58108,high,msspec_SE high_rho (D11)
+M015,Rh_E32.0_p6,,Rh,,,,,,32.0,,,183,,3.52988,high,msspec_SE high_rho (D11)
+M016,SrTiO3-triclinic-proxy_E5.0_p6,,SrTiO3-triclinic-proxy,,,,,,5.0,,,201,,3.51512,high,msspec_SE high_rho (D11)
+M017,Pt_E5.0_p6,,Pt,,,,,,5.0,,,183,,3.48408,high,msspec_SE high_rho (D11)
+M018,Pt_E27.0_p6,,Pt,,,,,,27.0,,,183,,3.47448,high,msspec_SE high_rho (D11)
+M019,Ir_E31.0_p6,,Ir,,,,,,31.0,,,183,,3.40384,high,msspec_SE high_rho (D11)
+M020,Rh_E27.0_p5,,Rh,,,,,,27.0,,,83,,3.35628,high,msspec_SE high_rho (D11)
+M021,MoS2-2H_E5.0_p6,,MoS2-2H,,,,,,5.0,,,168,,3.30147,high,msspec_SE high_rho (D11)
+M022,Ir_E27.0_p5,,Ir,,,,,,27.0,,,83,,3.26852,high,msspec_SE high_rho (D11)
+M023,Al_E9.0_p6,,Al,,,,,,9.0,,,183,,3.24158,high,msspec_SE high_rho (D11)
+M024,Cu_E5.0_p6,,Cu,,,,,,5.0,,,183,,3.15387,high,msspec_SE high_rho (D11)
+M025,Co_E5.0_p6,,Co,,,,,,5.0,,,234,,3.13611,high,msspec_SE high_rho (D11)
+M026,NiAl-B2_E5.0_p6,,NiAl-B2,,,,,,5.0,,,95,,3.13169,high,msspec_SE high_rho (D11)
+M027,Al_E5.0_p5,,Al,,,,,,5.0,,,83,,3.05777,high,msspec_SE high_rho (D11)
+M028,Ni_E5.0_p5,,Ni,,,,,,5.0,,,83,,3.04391,high,msspec_SE high_rho (D11)
+M029,Ir_E5.0_p6,,Ir,,,,,,5.0,,,183,,3.03941,high,msspec_SE high_rho (D11)
+M030,Pt_E23.0_p6,,Pt,,,,,,23.0,,,183,,3.01094,high,msspec_SE high_rho (D11)
+M031,Ir_E8.2_p6,,Ir,,,,,,8.2,,,183,,3.00052,high,msspec_SE high_rho (D11)
+M032,W_E6.0_p5,,W,,,,,,6.0,,,39,,2.73917,high,msspec_SE high_rho (D11)
+M033,Pd_E27.0_p6,,Pd,,,,,,27.0,,,183,,2.73091,high,msspec_SE high_rho (D11)
+M034,Si_E5.0_p6,,Si,,,,,,5.0,,,47,,2.61603,high,msspec_SE high_rho (D11)
+M035,MgO_E85.0_p6,,MgO,,,,,,85.0,,,298,,2.5929,high,msspec_SE high_rho (D11)
+M036,Pd_E34.0_p6,,Pd,,,,,,34.0,,,183,,2.51182,high,msspec_SE high_rho (D11)
+M037,Rh_E5.0_p6,,Rh,,,,,,5.0,,,183,,2.50259,high,msspec_SE high_rho (D11)
+M038,Au_E5.0_p6,,Au,,,,,,5.0,,,183,,2.47796,high,msspec_SE high_rho (D11)
+M039,Rh_E20.0_p6,,Rh,,,,,,20.0,,,183,,2.46062,high,msspec_SE high_rho (D11)
+M040,MgO_E34.0_p6,,MgO,,,,,,34.0,,,298,,2.45923,high,msspec_SE high_rho (D11)
+M041,Cu3Au-L12_E5.3_p6,,Cu3Au-L12,,,,,,5.3,,,183,,2.45912,high,msspec_SE high_rho (D11)
+M042,MgO_E5.0_p6,,MgO,,,,,,5.0,,,298,,2.42794,high,msspec_SE high_rho (D11)
+M043,Ir_E36.0_p6,,Ir,,,,,,36.0,,,183,,2.40433,high,msspec_SE high_rho (D11)
+M044,SiC_E5.0_p6,,SiC,,,,,,5.0,,,47,,2.34008,high,msspec_SE high_rho (D11)
+M045,Rh_E37.1_p5,,Rh,,,,,,37.1,,,83,,2.33463,high,msspec_SE high_rho (D11)
+M046,W_E26.0_p6,,W,,,,,,26.0,,,95,,2.33342,high,msspec_SE high_rho (D11)
+M047,TiO2-rutile_E5.0_p6,,TiO2-rutile,,,,,,5.0,,,109,,2.29217,high,msspec_SE high_rho (D11)
+M048,Al_E15.0_p4,,Al,,,,,,15.0,,,50,,2.13261,high,msspec_SE high_rho (D11)
+M049,GaAs_E5.0_p6,,GaAs,,,,,,5.0,,,47,,2.1181,high,msspec_SE high_rho (D11)
+M050,Pt_E35.6_p5,,Pt,,,,,,35.6,,,83,,2.10859,high,msspec_SE high_rho (D11)
+M051,r_0299_s_0086_ke_231.03_Ca_bcc_o_001_phi_68.0,,Ca,bcc,001,low_index,2p3/2,48,231.03,68.0,12.12,103,8,0.955907285,low,prod3000 rho_scan
+M052,r_2067_s_0580_ke_244.79_AlP_zincblende_o_m1m11_phi_80.8,,AlP,zincblende,m1m11,low_index,2p,1,244.79,80.8,6.07,31,8,0.54690361,low,prod3000 rho_scan
+M053,r_1207_s_0328_ke_484.03_RbCl_wurtzite_o_20m21_phi_3.3,,RbCl,wurtzite,20m21,semipolar,2p,10,484.03,3.3,7.96,21,8,0.308318168,low,prod3000 rho_scan
+M054,r_1339_s_0370_ke_222.65_Be_hcp_o_20m2m1_phi_255.3,,Be,hcp,20m2m1,semipolar,1s,15,222.65,255.3,3.91,33,8,0.407984734,low,prod3000 rho_scan
+M055,r_1939_s_0547_ke_776.41_PbS_rocksalt_o_m1m2m3_phi_276.4,,PbS,rocksalt,m1m2m3,high_index,2p,6,776.41,276.4,5.43,15,8,0.445997447,low,prod3000 rho_scan
+M056,r_1876_s_0527_ke_649.11_KCl_zincblende_o_00m1_phi_291.7,,KCl,zincblende,00m1,low_index,2p3/2,3,649.11,291.7,6.78,22,8,0.253648102,low,prod3000 rho_scan
+M057,r_0939_s_0260_ke_591.53_Co_hcp_o_0001_phi_113.2,,Co,hcp,0001,polar,2p3/2,64,591.53,113.2,7.06,80,8,0.883225441,low,prod3000 rho_scan
+M058,r_1135_s_0307_ke_356.49_Bi_a7_o_1m100_phi_105.5,,Bi,a7,1m100,nonpolar_m,4f7/2,66,356.49,105.5,10.83,91,8,0.8373698,low,prod3000 rho_scan
+M059,r_1355_s_0374_ke_596.13_SrRuO3_perovskite_o_m110_phi_231.3,,SrRuO3,perovskite,m110,low_index,1s,25,596.13,231.3,5.79,32,8,0.596468091,low,prod3000 rho_scan
+M060,r_2444_s_0682_ke_767.69_Y_fcc_o_m11m1_phi_356.2,,Y,fcc,m11m1,low_index,3d5/2,11,767.69,356.2,11.57,86,8,0.804434717,low,prod3000 rho_scan
+M061,r_2511_s_0701_ke_691.54_FeF_rutile_o_m122_phi_174.2,,FeF,rutile,m122,high_index,2p3/2,9,691.54,174.2,3.99,18,8,0.309047401,low,prod3000 rho_scan
+M062,r_2470_s_0689_ke_695.33_C-diamond_diamond_o_023_phi_161.8,,C-diamond,diamond,023,high_index,1s,14,695.33,161.8,6.6,123,8,0.525697827,low,prod3000 rho_scan
+M063,r_0272_s_0079_ke_878.55_AuBr_zincblende_o_m112_phi_160.2,,AuBr,zincblende,m112,high_index,4f7/2,6,878.55,160.2,5.13,18,8,0.286184132,low,prod3000 rho_scan
+M064,r_0463_s_0132_ke_182.73_Fe_bcc_o_m10m1_phi_309.7,,Fe,bcc,m10m1,low_index,2p3/2,37,182.73,309.7,5.93,42,8,0.875371516,low,prod3000 rho_scan
+M065,r_1196_s_0325_ke_316.93_Au_fcc_o_00m1_phi_349.7,,Au,fcc,00m1,low_index,4f7/2,15,316.93,349.7,5.89,34,8,0.73988229,low,prod3000 rho_scan
+M066,r_0852_s_0235_ke_590.23_ScAs_rocksalt_o_1m11_phi_90.2,,ScAs,rocksalt,1m11,low_index,3d,13,590.23,90.2,5.57,17,8,0.424318016,low,prod3000 rho_scan
+M067,r_2726_s_0763_ke_178.53_TiO2_rutile_o_001_phi_293.7,,TiO2,rutile,001,low_index,1s,30,178.53,293.7,5.56,39,8,0.686727524,low,prod3000 rho_scan
+M068,r_0941_s_0261_ke_157.31_GaN_wurtzite_o_10m12_phi_53.6,,GaN,wurtzite,10m12,semipolar,1s,7,157.31,53.6,6.62,50,8,0.712248504,low,prod3000 rho_scan
+M069,r_0545_s_0154_ke_425.87_LiF_rocksalt_o_0m10_phi_328.4,,LiF,rocksalt,0m10,low_index,1s,27,425.87,328.4,4.69,39,8,0.412849158,low,prod3000 rho_scan
+M070,r_0956_s_0264_ke_218.58_LaAlO3_perovskite_o_m211_phi_107.4,,LaAlO3,perovskite,m211,high_index,1s,41,218.58,107.4,6.73,52,8,0.780805469,low,prod3000 rho_scan
+M071,r_0319_s_0091_ke_14.75_FeAl_cesiumchloride_o_2m1m1_phi_63.1,,FeAl,cesiumchloride,2m1m1,high_index,2p3/2,7,14.75,63.1,4.3,16,8,0.84453702,low,prod3000 rho_scan
+M072,r_2628_s_0734_ke_14.89_Pd_hcp_o_11m2m2_phi_11.8,,Pd,hcp,11m2m2,semipolar,3d5/2,40,14.89,11.8,9.99,120,8,0.9775635,low,prod3000 rho_scan
+M073,r_1799_s_0503_ke_20.17_InCl_fluorite_o_100_phi_111.0,,InCl,fluorite,100,low_index,3d5/2,17,20.17,111.0,5.14,26,8,0.962147236,low,prod3000 rho_scan
+M074,r_2142_s_0601_ke_20.75_CsCl_layered_o_000m1_phi_181.1,,CsCl,layered,000m1,polar,2p,30,20.75,181.1,7.6,32,8,0.789366364,low,prod3000 rho_scan
+M075,r_1397_s_0386_ke_22.41_SrBr_wurtzite_o_10m1m1_phi_180.6,,SrBr,wurtzite,10m1m1,semipolar,3d,1,22.41,180.6,9.38,36,8,0.656048775,low,prod3000 rho_scan
+M076,r_1810_s_0506_ke_23.34_K_a7_o_20m2m1_phi_203.4,,K,a7,20m2m1,semipolar,2p3/2,1,23.34,203.4,11.15,44,8,0.636923909,low,prod3000 rho_scan
+M077,r_1174_s_0318_ke_26.61_LiBaCl_perovskite_o_0m21_phi_345.7,,LiBaCl,perovskite,0m21,high_index,2p,15,26.61,345.7,9.44,32,8,0.951617181,low,prod3000 rho_scan
+M078,r_1951_s_0550_ke_28.27_SrB_wurtzite_o_1m100_phi_99.0,,SrB,wurtzite,1m100,nonpolar_m,1s,5,28.27,99.0,4.77,12,8,0.51704812,low,prod3000 rho_scan
+M079,r_0406_s_0116_ke_29.43_Ge_diamond_o_m101_phi_234.4,,Ge,diamond,m101,low_index,3d,56,29.43,234.4,7.76,60,8,0.908937991,low,prod3000 rho_scan
+M080,r_1828_s_0512_ke_30.16_GaB_wurtzite_o_11m20_phi_24.3,,GaB,wurtzite,11m20,nonpolar_a,3d,1,30.16,24.3,6.64,55,8,0.849990368,low,prod3000 rho_scan
+M081,r_1184_s_0321_ke_30.94_TiC_rocksalt_o_1m3m2_phi_148.3,,TiC,rocksalt,1m3m2,high_index,2p3/2,9,30.94,148.3,4.98,31,8,0.909105778,low,prod3000 rho_scan
+M082,r_1750_s_0488_ke_32.38_Zn_hcp_o_20m2m1_phi_53.0,,Zn,hcp,20m2m1,semipolar,2p3/2,30,32.38,53.0,8.68,80,8,0.899268389,low,prod3000 rho_scan
+M083,r_1815_s_0508_ke_32.57_YS_wurtzite_o_11m20_phi_57.9,,YS,wurtzite,11m20,nonpolar_a,2p,10,32.57,57.9,6.36,17,8,0.586274326,low,prod3000 rho_scan
+M084,r_1328_s_0367_ke_32.97_ZnSe_zincblende_o_m2m10_phi_162.1,,ZnSe,zincblende,m2m10,high_index,3d,18,32.97,162.1,8.43,48,8,0.668945253,low,prod3000 rho_scan
+M085,r_0225_s_0069_ke_33.65_GeI_layered_o_10m1m1_phi_314.2,,GeI,layered,10m1m1,semipolar,3d,3,33.65,314.2,5.85,25,8,0.968718171,low,prod3000 rho_scan
+M086,r_1169_s_0316_ke_35.06_3C-SiC_zincblende_o_m13m2_phi_294.5,,3C-SiC,zincblende,m13m2,high_index,1s,0,35.06,294.5,4.46,19,8,0.97069329,low,prod3000 rho_scan
+M087,r_0343_s_0099_ke_37.49_Fe_hcp_o_0001_phi_218.2,,Fe,hcp,0001,polar,2p3/2,18,37.49,218.2,5.15,26,8,0.829711556,low,prod3000 rho_scan
+M088,r_1849_s_0516_ke_38.16_Ti_diamond_o_2m1m1_phi_60.2,,Ti,diamond,2m1m1,high_index,2p3/2,6,38.16,60.2,9.41,39,8,0.669448197,low,prod3000 rho_scan
+M089,r_1874_s_0526_ke_41.31_ScSb_wurtzite_o_10m1m2_phi_306.4,,ScSb,wurtzite,10m1m2,semipolar,3d5/2,4,41.31,306.4,7.18,14,8,0.520145059,low,prod3000 rho_scan
+M090,r_1508_s_0414_ke_41.43_TlGeI_perovskite_o_100_phi_60.6,,TlGeI,perovskite,100,low_index,3d5/2,5,41.43,60.6,6.13,34,8,0.975812733,low,prod3000 rho_scan
+M091,r_1150_s_0311_ke_41.91_Li_a7_o_000m1_phi_136.7,,Li,a7,000m1,polar,1s,15,41.91,136.7,5.85,20,8,0.404716134,low,prod3000 rho_scan
+M092,r_0997_s_0273_ke_42.23_GeO_rutile_o_0m10_phi_230.9,,GeO,rutile,0m10,low_index,1s,13,42.23,230.9,4.91,56,8,0.984967411,low,prod3000 rho_scan
+M093,r_1768_s_0494_ke_43.05_LiCl_zincblende_o_01m3_phi_9.6,,LiCl,zincblende,01m3,high_index,1s,7,43.05,9.6,9.91,89,8,0.99176079,low,prod3000 rho_scan
+M094,r_0716_s_0201_ke_43.07_Mo_hcp_o_000m1_phi_116.0,,Mo,hcp,000m1,polar,3d5/2,12,43.07,116.0,5.01,14,8,0.739921451,low,prod3000 rho_scan
+M095,r_0371_s_0107_ke_43.59_BiBa_cesiumchloride_o_11m2_phi_309.5,,BiBa,cesiumchloride,11m2,high_index,4f7/2,3,43.59,309.5,6.63,16,8,0.687304139,low,prod3000 rho_scan
+M096,r_0817_s_0227_ke_44.99_ZnS_zincblende_o_m1m21_phi_209.3,,ZnS,zincblende,m1m21,high_index,2p,39,44.99,209.3,7.23,41,8,0.904473364,low,prod3000 rho_scan
+M097,r_0460_s_0131_ke_49.92_CsB_zincblende_o_10m1_phi_33.4,,CsB,zincblende,10m1,low_index,1s,24,49.92,33.4,9.09,29,8,0.613894701,low,prod3000 rho_scan
+M098,r_1035_s_0281_ke_50.99_CuZn_cesiumchloride_o_m10m1_phi_98.7,,CuZn,cesiumchloride,m10m1,low_index,2p3/2,5,50.99,98.7,4.76,18,8,0.59823668,low,prod3000 rho_scan
+M099,r_1570_s_0435_ke_53.04_CdCa_L12_o_m213_phi_171.2,,CdCa,L12,m213,high_index,2p3/2,5,53.04,171.2,5.56,23,8,0.842167139,low,prod3000 rho_scan
+M100,r_1738_s_0484_ke_55.16_GaP_zincblende_o_1m2m2_phi_264.0,,GaP,zincblende,1m2m2,high_index,3d,12,55.16,264.0,6.65,36,8,0.796553731,low,prod3000 rho_scan

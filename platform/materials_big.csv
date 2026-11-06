@@ -1,0 +1,5 @@
+mat_id,stratum,run_tag,name,prototype,surface_orientation,orientation_class,level,absorber_idx,phi,ke,natoms,lmax,rho,temperature,debye_temperature,use_debye_model,debye_qd,pred_lu_mib,seed
+B01,low,r_0893_s_0248_ke_800.36_LiF_rocksalt_o_m201_phi_204.3,LiF,rocksalt,m201,,1s,213,204.3,800.36,277,8,0.563477695,100.2,259.0,True,2.014355,51178.2,20261030
+B02,low,r_0896_s_0248_ke_786.73_LiF_rocksalt_o_m201_phi_204.3,LiF,rocksalt,m201,,1s,213,204.3,786.73,277,8,0.574600935,100.2,259.0,True,2.014355,51178.2,20261030
+B03,low,r_1232_s_0336_ke_754.45_graphite_graphite_o_0001_phi_245.3,graphite,graphite,0001,,1s,6,245.3,754.45,262,8,0.697746575,253.8,329.0,True,1.509518,45785.5,20261030
+B04,low,r_1382_s_0381_ke_601.66_Mg_hcp_o_10m1m2_phi_285.7,Mg,hcp,10m1m2,,2p,61,285.7,601.66,270,8,0.742999196,22.1,646.0,True,1.325490,48624.3,20261030

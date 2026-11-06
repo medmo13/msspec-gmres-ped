@@ -1,0 +1,3 @@
+      SUBROUTINE MAIN()
+        CALL PHAGEN()
+      END SUBROUTINE MAIN

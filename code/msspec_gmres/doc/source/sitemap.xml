@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+<url>
+  <loc>https://msspec.cnrs.fr/</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/genindex.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/py-modindex.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/intro.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/downloads.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/spectro.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/parameters.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/index.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/contributors.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/faq/index.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/todo.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/search.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/index.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/iodata.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/calculator.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/parameters.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/misc.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/calcio.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/utils.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/config.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/modules/electron_be.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_downloads/MsSpec-1.2rc3.post154.pdf</loc>
+  <lastmod>2018-12-29T10:38:59+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/ped/ped.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/aed/aed.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/apecs/apecs.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/exafs/exafs.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/leed/leed.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/spectroscopies/eig/eig.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/copper/tuto_ped_copper.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/nickel_chain/tuto_ped_nickel_chain.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/RhO/tuto_ped_RhO.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/temperature/tuto_ped_temperature.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/tutorials/AlN/tuto_cluster.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/faq/hemispherical_cluster/hemispherical_cluster.html</loc>
+  <lastmod>2018-12-29T10:40:37+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/iodata.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/calculator.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/parameters.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/misc.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/calcio.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/utils.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/config.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.51</priority>
+</url>
+<url>
+  <loc>https://msspec.cnrs.fr/_modules/index.html</loc>
+  <lastmod>2018-12-29T10:40:38+00:00</lastmod>
+  <priority>0.41</priority>
+</url>
+
+
+</urlset>

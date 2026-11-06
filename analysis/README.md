@@ -1,0 +1,1 @@
+Scripts in this folder: evaluate.py (error metrics from arrays), stats.py (intervals and tests), make_results_numbers.py and make_numbers.py (write the numbers used in the paper), plot_*.py (figures).

@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+#
+# Copyright © 2016-2021 - Rennes Physics Institute
+#
+# This file is part of msspec.
+#
+# msspec is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# msspec is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this msspec.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Source file  : utils/dockerized/linux/msspec
+# Last modified: Thu, 23 Sep 2021 16:55:16 +0200
+# Committed by : sylvain tricot <sylvain.tricot@univ-rennes1.fr>
+
+THIS_SCRIPT="$0"
+IMAGE_NAME="iprcnrs/msspec:latest"
+
+Logln () {
+    echo "$1" >&2
+}
+
+Log () {
+    echo -n "$1" >&2
+}
+
+Read_YesNo () {
+    PROMPT="$1"
+    DEFAULT="$2"
+
+    ANSWER=""
+    RESPONSE=""
+
+    VALID=1
+    while test $VALID -ne 0; do
+        read -p "${PROMPT} (y/n) [${DEFAULT}]? " "RESPONSE"
+        ANSWER="${RESPONSE:-${DEFAULT}}"
+        case "${ANSWER}" in
+            y|n) VALID=0 ;;
+            *) echo "Invalid choice, please answer \"y\" or \"n\"."; VALID=1 ;;
+        esac
+    done
+}
+
+Get_MsSpecContainerID () {
+    CID=$(docker ps -a -q --filter ancestor=$IMAGE_NAME)
+    echo $CID
+}
+
+Get_MsSpecImageID () {
+    IID=$(docker images -q $IMAGE_NAME)
+    echo $IID
+}
+
+Add_MsSpecImage () {
+    docker pull $IMAGE_NAME 1>&2
+}
+
+Add_MsSpecContainer () {
+    CID=$(Get_MsSpecContainerID)
+    if [ -z "$CID" ]; then
+        IID=$(Get_MsSpecImageID)
+        if [ -z "$IID" ]; then
+            Logln "Pulling MsSpec image..."
+            Add_MsSpecImage
+        fi
+        Log "Creating the MsSpec container... "
+        USERNAME=$(whoami)
+        USERID=$(id -u $USERNAME)
+        GROUPID=$(id -g $USERNAME)
+        CID=$(docker create -i --net=host -e DISPLAY=$DISPLAY -v $HOME:$HOME -u ${USERID}:${GROUPID} --entrypoint /bin/bash $IMAGE_NAME)
+        Logln "done."
+    fi
+    echo $CID
+}
+
+Start_MsSpecContainer () {
+    CID=$(Add_MsSpecContainer)
+    status=$(docker container inspect -f '{{.State.Status}}' $CID)
+    if [ $status != "running" ]; then
+        Log "Starting MsSpec container... "
+        # Start the container
+        CID=$(docker start $CID)
+        Logln "done."
+    fi
+}
+
+Remove_MsSpecContainer () {
+    Log "Removing MsSpec container... "
+    CID=$(Get_MsSpecContainerID)
+    docker stop -t 1 $CID >/dev/null 2>&1
+    docker rm $CID >/dev/null 2>&1
+    Logln "done."
+}
+
+Run_MsSpec () {
+    # Run msspec command
+    CID=$(Get_MsSpecContainerID)
+    xhost +localhost >/dev/null 2>&1
+    docker exec -i -t -w "$PWD" $CID msspec "$@"
+}
+
+Run_Bash () {
+    # Run msspec command
+    CID=$(Get_MsSpecContainerID)
+    xhost +localhost >/dev/null 2>&1
+    docker exec -i -t -w "$PWD" -e HOME=$HOME -e PS1="MsSpec:\w> " $CID /bin/bash --norc --noprofile
+}
+
+Uninstall_MsSpecImage () {
+    Read_YesNo "You are about to remove the MsSpec Docker image, its container and this script. Are you sure" "n"
+    case $ANSWER in
+        y) Remove_MsSpecContainer;
+           Log "Removing ${IMAGE_NAME}...";
+           docker rmi $IMAGE_NAME >/dev/null 2>&1;
+           Logln "done.";
+           Log "Removing ${THIS_SCRIPT}...";
+           rm -f $THIS_SCRIPT;
+           Logln "done.";
+           ;;
+        n) echo "Uninstallation aborted."
+     esac
+}
+
+Show_Help () {
+    echo "Usage: 1) msspec -p [PYTHON OPTIONS] SCRIPT [ARGUMENTS...]"
+    echo "       2) msspec [-l FILE | -i | -h]"
+    echo "       3) msspec [bash | reset]"
+    echo ""
+    echo "Form (1) is used to launch a script"
+    echo "Form (2) is used to load a hdf5 data file"
+    echo "Form (3) is used to control the Docker container/image."
+    echo ""
+    echo "List of possible options:"
+    echo "    -p   Pass every arguments after this option to the msspec"
+    echo "         virtual environment Python interpreter."
+    echo "    -i   Run the interactive Python interpreter within msspec"
+    echo "         virtual environment."
+    echo "    -l   Load and display a *.hdf5 data file in a graphical"
+    echo "         window."
+    echo "    -v   Print the version."
+    echo "    -h   Show this help message."
+    echo ""
+    echo "    bash        This command starts an interactive bash shell in the"
+    echo "                MsSpec container."
+    echo "    reset       This command removes the MsSpec container (but not the"
+    echo "                image). Changes made in the container will be lost and"
+    echo "                any new call to msspec will recreate a new fresh container."
+}
+
+case $1 in
+    reset)     Remove_MsSpecContainer ;;
+    bash)      Start_MsSpecContainer; Run_Bash ;;
+    "-u")      Uninstall_MsSpecImage ;;
+    "-h"|"")   Start_MsSpecContainer; Show_Help ;;
+    *)         Start_MsSpecContainer; Run_MsSpec "$@" ;;
+esac

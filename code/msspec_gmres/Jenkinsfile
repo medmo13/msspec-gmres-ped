@@ -1,0 +1,24 @@
+pipeline {
+    agent {label 'msspec_agent_amd64'}
+    stages {
+        stage('Building the code...') {
+            steps {
+		sh 'make devel PYTHON=python3'
+            }
+        }
+        stage('Building HTML documentation...') {
+            steps {
+		sh 'make doc PYTHON=python3'
+            }
+        }
+        stage('Syncing website...') {
+            steps {
+		echo 'Syncing website only in master branch, not here in devel branch...'
+		// sh 'rm -rf $HOME/www/*'
+                // sh 'cp -a ./doc/build/html/* $HOME/www/'
+            }
+        }
+
+    }
+}
+

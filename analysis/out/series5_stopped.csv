@@ -1,0 +1,2 @@
+case,natoms,order,elapsed_min_when_stopped,source
+H13,107,5,134,ps elapsed 02:14:03 of the worker process (PID 573204) on 2026-11-06 before it was stopped by PID; no result was written

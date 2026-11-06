@@ -1,0 +1,6 @@
+*.so
+*.o
+__pycache__/
+build/
+_venv/
+platform/work/

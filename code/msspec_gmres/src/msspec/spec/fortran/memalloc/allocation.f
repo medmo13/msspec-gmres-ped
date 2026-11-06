@@ -1,0 +1,209 @@
+      SUBROUTINE ALLOCATION(NATP_M_, NATCLU_M_, NAT_EQ_M_, N_CL_L_M_, NE
+     &_M_, NL_M_, LI_M_, NEMET_M_, NO_ST_M_, NDIF_M_, NSO_M_, NTEMP_M_, 
+     &NODES_EX_M_, NSPIN_M_, NTH_M_, NPH_M_, NDIM_M_, N_TILT_M_, N_ORD_M
+     &_, NPATH_M_, NGR_M_)
+        USE DIM_MOD
+        USE ADSORB_MOD
+        USE APPROX_MOD
+        USE ATOMS_MOD
+        USE AUGER_MOD
+        USE BASES_MOD
+        USE CLUSLIM_MOD
+        USE COOR_MOD
+        USE DEBWAL_MOD
+        USE INDAT_MOD
+        USE INIT_A_MOD
+        USE INIT_L_MOD
+        USE INIT_J_MOD
+        USE INIT_M_MOD
+        USE INFILES_MOD
+        USE INUNITS_MOD
+        USE LIMAMA_MOD
+        USE LPMOY_MOD
+        USE MASSAT_MOD
+        USE MILLER_MOD
+        USE OUTUNITS_MOD
+        USE PARCAL_MOD
+        USE PARCAL_A_MOD
+        USE CORREXP_MOD
+        USE GAUNT_C_MOD
+        USE Q_ARRAY_MOD
+        USE RELADS_MOD
+        USE RELAX_MOD
+        USE RESEAU_MOD
+        USE SPIN_MOD
+        USE TESTS_MOD
+        USE TRANS_MOD
+        USE TL_AED_MOD
+        USE TYPCAL_MOD
+        USE TYPCAL_A_MOD
+        USE TYPEM_MOD
+        USE TYPEXP_MOD
+        USE VALIN_MOD
+        USE XMRHO_MOD
+        USE CRANGL_MOD
+        USE VECSYS_MOD
+        USE VIBRAT_MOD
+        USE COEFRLM_MOD
+        USE EXPROT_MOD
+        USE EXPFAC_MOD
+        USE DEXPFAC_MOD
+        USE LOGAMAD_MOD
+        USE EXPFAC2_MOD
+        USE FACTSQ_MOD
+        USE ALGORITHM_MOD
+        USE EXAFS_MOD
+        USE HEADER_MOD
+        USE MOYEN_MOD
+        USE VALIN_AV_MOD
+        USE VALFIN_MOD
+        USE VALEX_A_MOD
+        USE AMPLI_MOD
+        USE CONVACC_MOD
+        USE CONVTYP_MOD
+        USE C_G_MOD
+        USE C_G_A_MOD
+        USE C_G_M_MOD
+        USE DEXPFAC2_MOD
+        USE DFACTSQ_MOD
+        USE EIGEN_MOD
+        USE FDIF_MOD
+        USE FIXSCAN_MOD
+        USE FIXSCAN_A_MOD
+        USE LINLBD_MOD
+        USE MOYEN_A_MOD
+        USE OUTFILES_MOD
+        USE RA_MOD
+        USE SPECTRUM_MOD
+        USE DIRECT_MOD
+        USE DIRECT_A_MOD
+        USE PATH_MOD
+        USE RENORM_MOD
+        USE C_RENORM_MOD
+        USE ROT_MOD
+        USE ROT_CUB_MOD
+        USE SYMMOP_MOD
+        USE TAU_PROT_MOD
+        USE TAUSYMMOP_MOD
+        USE TESTPA_MOD
+        USE TESTPB_MOD
+        USE TLDW_MOD
+        USE VARIA_MOD
+        USE LBD_MOD
+        USE SCATMAT_MOD
+        USE EXTREM_MOD
+        USE PRINTP_MOD
+        IMPLICIT INTEGER (A-Z)
+        NATP_M = NATP_M_
+        NATCLU_M = NATCLU_M_
+        NAT_EQ_M = NAT_EQ_M_
+        N_CL_L_M = N_CL_L_M_
+        NE_M = NE_M_
+        NL_M = NL_M_
+        LI_M = LI_M_
+        NEMET_M = NEMET_M_
+        NO_ST_M = NO_ST_M_
+        NDIF_M = NDIF_M_
+        NSO_M = NSO_M_
+        NTEMP_M = NTEMP_M_
+        NODES_EX_M = NODES_EX_M_
+        NSPIN_M = NSPIN_M_
+        NTH_M = NTH_M_
+        NPH_M = NPH_M_
+        NDIM_M = NDIM_M_
+        N_TILT_M = N_TILT_M_
+        N_ORD_M = N_ORD_M_
+        NPATH_M = NPATH_M_
+        NGR_M = NGR_M_
+        CALL INIT_DIM()
+        CALL ALLOC_ADSORB()
+        CALL ALLOC_APPROX()
+        CALL ALLOC_ATOMS()
+        CALL ALLOC_AUGER()
+        CALL ALLOC_BASES()
+        CALL ALLOC_CLUSLIM()
+        CALL ALLOC_COOR()
+        CALL ALLOC_C_RENORM()
+        CALL ALLOC_DEBWAL()
+        CALL ALLOC_INDAT()
+        CALL ALLOC_INIT_A()
+        CALL ALLOC_INIT_L()
+        CALL ALLOC_INIT_J()
+        CALL ALLOC_INIT_M()
+        CALL ALLOC_INFILES()
+        CALL ALLOC_INUNITS()
+        CALL ALLOC_LIMAMA()
+        CALL ALLOC_LPMOY()
+        CALL ALLOC_MASSAT()
+        CALL ALLOC_MILLER()
+        CALL ALLOC_OUTUNITS()
+        CALL ALLOC_PARCAL()
+        CALL ALLOC_PARCAL_A()
+        CALL ALLOC_Q_ARRAY()
+        CALL ALLOC_RELADS()
+        CALL ALLOC_RELAX()
+        CALL ALLOC_RENORM()
+        CALL ALLOC_RESEAU()
+        CALL ALLOC_SPIN()
+        CALL ALLOC_TESTS()
+        CALL ALLOC_TRANS()
+        CALL ALLOC_TL_AED()
+        CALL ALLOC_TYPCAL()
+        CALL ALLOC_TYPCAL_A()
+        CALL ALLOC_TYPEM()
+        CALL ALLOC_TYPEXP()
+        CALL ALLOC_VALIN()
+        CALL ALLOC_XMRHO()
+        CALL ALLOC_CRANGL()
+        CALL ALLOC_VECSYS()
+        CALL ALLOC_VIBRAT()
+        CALL ALLOC_COEFRLM()
+        CALL ALLOC_EXPROT()
+        CALL ALLOC_EXPFAC()
+        CALL ALLOC_DEXPFAC()
+        CALL ALLOC_LOGAMAD()
+        CALL ALLOC_EXPFAC2()
+        CALL ALLOC_FACTSQ()
+        CALL ALLOC_ALGORITHM()
+        CALL ALLOC_EXAFS()
+        CALL ALLOC_HEADER()
+        CALL ALLOC_MOYEN()
+        CALL ALLOC_VALIN_AV()
+        CALL ALLOC_VALFIN()
+        CALL ALLOC_VALEX_A()
+        CALL ALLOC_AMPLI()
+        CALL ALLOC_CONVACC()
+        CALL ALLOC_CONVTYP()
+        CALL ALLOC_C_G()
+        CALL ALLOC_C_G_A()
+        CALL ALLOC_C_G_M()
+        CALL ALLOC_CORREXP()
+        CALL ALLOC_DEXPFAC2()
+        CALL ALLOC_DFACTSQ()
+        CALL ALLOC_EIGEN()
+        CALL ALLOC_FDIF()
+        CALL ALLOC_FIXSCAN()
+        CALL ALLOC_FIXSCAN_A()
+        CALL ALLOC_LINLBD()
+        CALL ALLOC_MOYEN_A()
+        CALL ALLOC_OUTFILES()
+        CALL ALLOC_RA()
+        CALL ALLOC_SPECTRUM()
+        CALL ALLOC_DIRECT()
+        CALL ALLOC_DIRECT_A()
+        CALL ALLOC_GAUNT_C()
+        CALL ALLOC_PATH()
+        CALL ALLOC_ROT()
+        CALL ALLOC_ROT_CUB()
+        CALL ALLOC_SYMMOP()
+        CALL ALLOC_TAU_PROT()
+        CALL ALLOC_TAUSYMMOP()
+        CALL ALLOC_TESTPA()
+        CALL ALLOC_TESTPB()
+        CALL ALLOC_TLDW()
+        CALL ALLOC_VARIA()
+        CALL ALLOC_LBD()
+        CALL ALLOC_SCATMAT()
+        CALL ALLOC_EXTREM()
+        CALL ALLOC_PRINTP()
+      END SUBROUTINE ALLOCATION

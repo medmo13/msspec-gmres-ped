@@ -1,0 +1,10 @@
+key,value
+n_cases,97
+spearman_resid_eps2,0.9458874693657984
+median_ratio_final,0.6580056886898162
+max_ratio_final,3.855565459831641
+min_ratio_final,0.03621054324934553
+median_resid_step3,0.14150413062836864
+median_eps2_step3,0.15746156595576344
+median_resid_step6,0.02118924925272759
+median_eps2_step6,0.014515395115582055

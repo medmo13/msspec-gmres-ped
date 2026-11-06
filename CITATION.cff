@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite the paper."
+title: "Data and code for: Tree-preconditioned GMRES for the multiple scattering equations of photoelectron diffraction"
+authors:
+  - family-names: Benaissa
+    given-names: Mohammed
+  - family-names: Hatada
+    given-names: Keisuke
+  - family-names: Sébilleau
+    given-names: Didier
+license: GPL-3.0-or-later

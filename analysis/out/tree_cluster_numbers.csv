@@ -1,0 +1,2 @@
+case,natoms,lmax,block_size,edges,tree_length_A,mem_full_mib,mem_blocks_mib,mem_ratio,edge_len_max_A,edge_len_median_A
+H11,118,8,81,117,244.8310,1393.97,35.24,39.56,2.701,1.910

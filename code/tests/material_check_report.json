@@ -1,0 +1,149 @@
+{
+  "settings": {
+    "tol": 1e-05,
+    "cap": 12,
+    "restart": 6,
+    "theta_points": 71,
+    "kinetic_energy_eV": 300.0
+  },
+  "materials": {
+    "Ag": {
+      "direct_bit_identical": true,
+      "tree_max_rel_diff": 2.429912219406643e-05,
+      "tree_pass": false,
+      "tree_rel_l2_vs_lu": {
+        "orig_tree": 2.6121615992356855e-06,
+        "new_tree": 6.114559275874389e-06
+      },
+      "tree_iterations": {
+        "orig_tree": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "new_tree": [
+          11,
+          10,
+          11,
+          11,
+          11,
+          10
+        ]
+      },
+      "runs": {
+        "orig_direct": {
+          "wall_s": 12.873,
+          "rss_mib": 322.2
+        },
+        "new_direct": {
+          "wall_s": 14.889,
+          "rss_mib": 323.3
+        },
+        "orig_tree": {
+          "wall_s": 4.975,
+          "rss_mib": 244.7
+        },
+        "new_tree": {
+          "wall_s": 4.608,
+          "rss_mib": 244.7
+        }
+      },
+      "tree_accuracy_pass": true
+    },
+    "Ni": {
+      "direct_bit_identical": true,
+      "tree_max_rel_diff": 1.936408349794741e-05,
+      "tree_pass": false,
+      "tree_rel_l2_vs_lu": {
+        "orig_tree": 1.4307154880618332e-06,
+        "new_tree": 6.57478477661129e-06
+      },
+      "tree_iterations": {
+        "orig_tree": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "new_tree": [
+          10,
+          10,
+          10,
+          11,
+          10,
+          10
+        ]
+      },
+      "runs": {
+        "orig_direct": {
+          "wall_s": 3.925,
+          "rss_mib": 273.2
+        },
+        "new_direct": {
+          "wall_s": 5.161,
+          "rss_mib": 274.2
+        },
+        "orig_tree": {
+          "wall_s": 6.018,
+          "rss_mib": 217.9
+        },
+        "new_tree": {
+          "wall_s": 4.98,
+          "rss_mib": 218.6
+        }
+      },
+      "tree_accuracy_pass": true
+    },
+    "Cu": {
+      "direct_bit_identical": true,
+      "tree_max_rel_diff": 2.0208552259312984e-05,
+      "tree_pass": false,
+      "tree_rel_l2_vs_lu": {
+        "orig_tree": 1.5816795004273775e-06,
+        "new_tree": 8.526386466747696e-06
+      },
+      "tree_iterations": {
+        "orig_tree": [
+          12,
+          12,
+          12,
+          12,
+          12,
+          12
+        ],
+        "new_tree": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      "runs": {
+        "orig_direct": {
+          "wall_s": 5.935,
+          "rss_mib": 290.0
+        },
+        "new_direct": {
+          "wall_s": 6.537,
+          "rss_mib": 289.7
+        },
+        "orig_tree": {
+          "wall_s": 5.814,
+          "rss_mib": 229.5
+        },
+        "new_tree": {
+          "wall_s": 7.945,
+          "rss_mib": 230.0
+        }
+      },
+      "tree_accuracy_pass": true
+    }
+  }
+}

@@ -1,0 +1,12 @@
+ase
+h5py
+ipython
+lxml
+matplotlib
+numpy
+Pint
+pandas
+pycairo
+scipy
+setuptools-scm
+terminaltables

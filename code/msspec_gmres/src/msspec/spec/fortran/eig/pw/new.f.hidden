@@ -1,0 +1,2079 @@
+C
+C=======================================================================
+C
+      SUBROUTINE EIGDIF_MI
+C
+C   This subroutine computes the eigenvalues of the
+C     multiple scattering matrix to obtain its spectral radius
+C
+C   The eigenvalue calculation is performed using the LAPACK
+C     eigenvalue routines for a general complex matrix (I_PWM = 0)
+C     or using the power method  (I_PWM > 0)
+C
+C                                      Last modified : 26 Apr 2013
+C
+C      INCLUDE 'spec.inc'
+      USE DIM_MOD
+      USE CONVTYP_MOD
+      USE COOR_MOD, NTCLU => NATCLU, NTP => NATYP
+      USE DEBWAL_MOD
+      USE EIGEN_MOD, NE => NE_EIG, E0 => E0_EIG, EFIN => EFIN_EIG
+      USE OUTFILES_MOD
+      USE OUTUNITS_MOD
+      USE RESEAU_MOD
+      USE TESTS_MOD
+      USE TRANS_MOD
+      USE VALIN_MOD, E1 => E0
+C
+      COMPLEX IC,ONEC
+      COMPLEX TLT(0:NT_M,4,NATM,NE_M)
+C
+      DATA CONV /0.512314/
+C
+      IC=(0.,1.)
+      ONEC=(1.,0.)
+C
+      OPEN(UNIT=IUO2, FILE=OUTFILE2, STATUS='UNKNOWN')
+C
+C  Check file to monitor the convergence of the calculation
+C
+      OPEN(UNIT=36, FILE='div/radius_conv.lis', STATUS='unknown')
+C
+C   Loop over the energies
+C
+      DO JE=1,NE
+        IF(NE.GT.1) THEN
+          ECIN=E0+FLOAT(JE-1)*(EFIN-E0)/FLOAT(NE-1)
+        ELSEIF(NE.EQ.1) THEN
+          ECIN=E0
+        ENDIF
+        CALL LPM(ECIN,XLPM,*6)
+        XLPM1=XLPM/A
+        IF(IPRINT.GT.0) WRITE(IUO1,56) A,XLPM1
+        IF(ITL.EQ.0) THEN
+          VK(JE)=SQRT(ECIN+VINT)*CONV*A*ONEC
+          VK2(JE)=CABS(VK(JE)*VK(JE))
+        ENDIF
+        GAMMA=1./(2.*XLPM1)
+        IF(IPOTC.EQ.0) THEN
+          VK(JE)=VK(JE)+IC*GAMMA
+        ENDIF
+        IF(I_MFP.EQ.0) THEN
+          VK(JE)=CMPLX(REAL(VK(JE)))
+          VK2(JE)=CABS(VK(JE)*VK(JE))
+        ENDIF
+        IF(I_VIB.EQ.1) THEN
+          IF(IDCM.GE.1) WRITE(IUO1,22)
+          DO JAT=1,N_PROT
+            IF(IDCM.EQ.0) THEN
+              XK2UJ2=VK2(JE)*UJ2(JAT)
+            ELSE
+              XK2UJ2=VK2(JE)*UJ_SQ(JAT)
+              WRITE(IUO1,23) JAT,UJ_SQ(JAT)*A*A
+            ENDIF
+            CALL DWSPH(JAT,JE,XK2UJ2,TLT,I_VIB)
+            DO LAT=0,LMAX(JAT,JE)
+              TL(LAT,1,JAT,JE)=TLT(LAT,1,JAT,JE)
+            ENDDO
+          ENDDO
+        ENDIF
+C
+        IF(JE.EQ.1) WRITE(36,57)
+        WRITE(36,59)
+        WRITE(36,58) ECIN
+        WRITE(36,59)
+C
+C     Eigenvalue calculation by power method
+C
+        CALL SPEC_RAD_POWER(JE,ECIN)
+C
+        WRITE(36,59)
+        WRITE(36,57)
+C
+C     End of the loop on the energy
+C
+      ENDDO
+      CLOSE(36)
+      GOTO 7
+C
+   6  WRITE(IUO1,55)
+C
+  22  FORMAT(16X,'INTERNAL CALCULATION OF MEAN SQUARE DISPLACEMENTS',/,
+     &25X,' BY DEBYE UNCORRELATED MODEL:',/)
+  23  FORMAT(21X,'ATOM TYPE ',I5,'  MSD = ',F8.6,' ANG**2')
+  55  FORMAT(///,12X,' <<<<<<<<<<  THIS VALUE OF ILPM IS NOT',
+     &'AVAILABLE  >>>>>>>>>>')
+  56  FORMAT(4X,'LATTICE PARAMETER A = ',F6.3,' ANGSTROEMS',4X,
+     *'MEAN FREE PATH = ',F6.3,' * A',//)
+  57  FORMAT('+++++++++++++++++++++++++++++++++++++++++++++++++++++++',
+     &'++++')
+  58  FORMAT(18X,'E_KIN = ',F8.2,1X,'eV')
+  59  FORMAT(20X)
+C
+   7  RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE SPEC_RAD_POWER(JE,E_KIN)
+C
+C   This subroutine computes the spectral radius of the G_o T kernel matrix
+C       using the power method and the Rayleigh quotient. In addition,
+C       a scalar convergence acceleration method can be used to refine the results.
+C
+C   Power method approximation of the spectral radius :
+C
+C      SR(A) = lim           ||A^{n} x|| / ||A^{n-1} x||
+C              n --> +infty
+C                                for any starting vector x
+C
+C   Rayleigh quotient approximation of the spectral radius :
+C
+C      SR(A) = lim           ||(A^{n}x)^{+} A  A^{n} x| / |(A^{n}x)^{+}  A^{n} x||
+C              n --> +infty
+C                                for any starting vector x
+C
+C   Note: a shift (= SHIFT) can be introduced in the power method.
+C           In this case, only the Rayleigh quotient is valid
+C
+C        !!!!!  This version does not store the G_o T matrix !!!!!
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified :  1 Mar 2013
+C
+C      INCLUDE 'spec.inc'
+      USE DIM_MOD
+      USE CONVTYP_MOD
+      USE COOR_MOD
+      USE OUTFILES_MOD
+      USE OUTUNITS_MOD
+      USE TRANS_MOD
+C
+C!      PARAMETER(NLTWO=2*NL_M) !Moved to DIM_MOD
+C
+      INTEGER NN(0:N_ORD_M)
+C
+      REAL R_SN(N_ORD_M),R_SN1(N_ORD_M)
+C
+      COMPLEX*16 TLK,SUM_L1,SUM_L2,EXPKJ,EXPJK,ONEC,MULT
+      COMPLEX*16 YLM(0:NLTWO,-NLTWO:NLTWO)
+      COMPLEX*16 X(LINMAX*NATCLU_M)
+      COMPLEX*16 AX(LINMAX*NATCLU_M),SUM_AX,XAX,XX
+      COMPLEX*16 HL1(0:NLTWO)
+      COMPLEX*16 ZEROC,IC,JC,JMULT,IFOURPI,CHIFT
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 COEF_GAUNT(LINMAX,LINMAX,0:N_GAUNT)
+C
+      REAL*8 PI,ATTKJ,GNT(0:N_GAUNT),XKJ,YKJ,ZKJ,RKJ,ZDKJ,KRKJ
+      REAL*8 ATTJK,XJK,YJK,ZJK,RJK,ZDJK,KRJK,SMALL
+      REAL*8 NORMX2,NORMAX2,RLIN
+C
+      CHARACTER*10 METH
+      CHARACTER*24 OUTFILE,PATH
+C
+      DATA PI,SMALL /3.1415926535898D0,1.0D-6/
+C
+      ONEC=(1.D0,0.D0)
+      IC=(0.0D0,1.0D0)
+      ZEROC=(0.D0,0.D0)
+      IFOURPI=4.D0*PI*IC
+      IBESS=3
+      N_CALL=0
+      N_ACC=0
+      K_ACC=0
+      I_CONV=0
+C
+      CHIFT=DCMPLX(SHIFT)
+C
+      IF(N_MAX.GT.N_ORD_M) THEN
+        WRITE(IUO1,99) N_MAX
+        STOP
+      ENDIF
+C
+C  Computing the size NLIN of the vectors A x
+C
+      LMAXJ=0
+      NLIN=0
+      DO JTYP=1,N_PROT
+        NBTYPJ=NATYP(JTYP)
+        LMJ=LMAX(JTYP,JE)
+        LMAXJ=MAX(LMAXJ,LMJ)
+        DO JNUM=1,NBTYPJ
+          DO LJ=0,LMJ
+            DO MJ=-LJ,LJ
+              NLIN=NLIN+1
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDDO
+C
+C  Storage of the modified Gaunt coefficients
+C
+      LIN1=0
+      DO L1=0,LMAXJ
+        DO M1=-L1,L1
+          LIN1=LIN1+1
+          LIN2=0
+          DO L2=0,LMAXJ
+            L_MIN=ABS(L2-L1)
+            L_MAX=L1+L2
+            DO M2=-L2,L2
+              LIN2=LIN2+1
+              CALL GAUNT2(L1,M1,L2,M2,GNT)
+              DO L=L_MIN,L_MAX,2
+                M=M1-M2
+                COEF_GAUNT(LIN1,LIN2,L)=IFOURPI*GNT(L)*(IC**
+     &          L)
+              ENDDO
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDDO
+C
+C  Starting vector for power method:
+C
+C               (JC^0,JC^1,JC^2,JC^3, ... ,JC^N)^EXPO
+C
+      JC=DCOS(PI/6.D0)+IC*DSIN(PI/6.D0)
+      JMULT=JC**EXPO
+C
+      WRITE(IUO1,6)
+C
+      IF(ABS(SHIFT).LE.SMALL) THEN
+        WRITE(36,76)
+      ELSE
+        WRITE(36,79)
+      ENDIF
+      WRITE(36,75)
+C
+C  Initialization the vectors and their squared norm
+C
+      MULT=JMULT
+C
+      AX(1)=ONEC
+C
+      NORMAX2=1.D0
+C
+      DO JLIN=2,NLIN
+C
+        AX(JLIN)=AX(JLIN-1)*MULT
+        NORMAX2=NORMAX2+CDABS(AX(JLIN))*CDABS(AX(JLIN))
+C
+      ENDDO
+C
+C  Computation of the vectors and their squared norm
+C
+C            X ---> A*X
+C
+ 120  IF(N_CALL.EQ.0) THEN
+        J_INI=1
+      ELSE
+        J_INI=N_CALL*N_ITER+1
+      ENDIF
+      J_FIN=MIN((N_CALL+1)*N_ITER,N_MAX)
+C
+      IF(J_INI.GT.J_FIN) GOTO 112
+C
+      DO JORD=J_INI,J_FIN
+C
+        NORMX2=NORMAX2
+C
+        XX=ZEROC
+        DO JLIN=1,NLIN
+C
+          X(JLIN)=AX(JLIN)
+          XX=XX+CONJG(X(JLIN))*X(JLIN)
+C
+        ENDDO
+C
+        NORMAX2=0.D0
+        XAX=ZEROC
+C
+C
+C  Construction of the the multiple scattering kernel matrix G_o T
+C                        times the vector x
+C
+C  Linear indices JLIN and KLIN represent (J,LJ) and (K,LK)
+C
+       JLIN=0
+       DO JTYP=1,N_PROT
+        NBTYPJ=NATYP(JTYP)
+        LMJ=LMAX(JTYP,JE)
+        DO JNUM=1,NBTYPJ
+          JATL=NCORR(JNUM,JTYP)
+          XJ=SYM_AT(1,JATL)
+          YJ=SYM_AT(2,JATL)
+          ZJ=SYM_AT(3,JATL)
+C
+          LINJ=0
+          DO LJ=0,LMJ
+            DO MJ=-LJ,LJ
+              JLIN=JLIN+1
+              LINJ=LINJ+1
+C
+              SUM_AX=ZEROC
+C
+              KLIN=0
+              DO KTYP=1,N_PROT
+                NBTYPK=NATYP(KTYP)
+                LMK=LMAX(KTYP,JE)
+                DO KNUM=1,NBTYPK
+                  KATL=NCORR(KNUM,KTYP)
+                  XK=SYM_AT(1,KATL)
+                  YK=SYM_AT(2,KATL)
+                  ZK=SYM_AT(3,KATL)
+C
+                  IF(KATL.NE.JATL) THEN
+C
+                    XKJ=DBLE(XK-XJ)
+                    YKJ=DBLE(YK-YJ)
+                    ZKJ=DBLE(ZK-ZJ)
+                    RKJ=DSQRT(XKJ*XKJ+YKJ*YKJ+ZKJ*ZKJ)
+                    KRKJ=DBLE(VK(JE))*RKJ
+                    ATTKJ=DEXP(-DIMAG(DCMPLX(VK(JE)))*
+     &              RKJ)
+                    EXPKJ=(XKJ+IC*YKJ)/RKJ
+                    ZDKJ=ZKJ/RKJ
+                    CALL SPH_HAR2(2*NL_M,ZDKJ,EXPKJ,YLM,
+     &              LMJ+LMK)
+                    CALL BESPHE2(LMJ+LMK+1,IBESS,KRKJ,
+     &              HL1)
+C
+                  ENDIF
+C
+                  LINK=0
+                  DO LK=0,LMK
+                    L_MIN=ABS(LK-LJ)
+                    L_MAX=LK+LJ
+                    TLK=ATTKJ*DCMPLX(TL(LK,1,KTYP,JE))
+                    DO MK=-LK,LK
+                      KLIN=KLIN+1
+                      LINK=LINK+1
+                      IF(KATL.NE.JATL) THEN
+C
+                        SUM_L1=ZEROC
+                        DO L=L_MIN,L_MAX,2
+                          M=MJ-MK
+                          IF(ABS(M).LE.L) THEN
+                            SUM_L1=SUM_L1+HL1(L)*
+     &                      COEF_GAUNT(LINJ,LINK,L)*YLM(L,M)
+                          ENDIF
+                        ENDDO
+                        SUM_AX=SUM_AX+TLK*SUM_L1*X(
+     &                  KLIN)
+C
+                      ENDIF
+                      IF(KLIN.EQ.JLIN) SUM_AX=SUM_AX-
+     &                CHIFT*X(KLIN)
+C
+                    ENDDO
+                  ENDDO
+C
+                ENDDO
+              ENDDO
+C
+              AX(JLIN)=SUM_AX
+              NORMAX2=NORMAX2+CDABS(SUM_AX)*CDABS(SUM_AX)
+              XAX=XAX+CONJG(X(JLIN))*SUM_AX
+C
+            ENDDO
+          ENDDO
+C
+         ENDDO
+       ENDDO
+C
+C  R_SN : power method
+C  R_SN1: Rayleigh quotient
+C
+        R_SN(JORD)=SQRT(REAL(NORMAX2/NORMX2))
+        R_SN1(JORD)=CDABS((XAX/XX)+SHIFT)
+C
+        IF(ABS(SHIFT).LE.SMALL) THEN
+          WRITE(36,77) JORD,R_SN(JORD),R_SN1(JORD)
+        ELSE
+          WRITE(36,77) JORD,R_SN1(JORD)
+        ENDIF
+C
+C  Check of convergence of power method series and
+C          Rayleigh quotient method
+C
+C  Note: only Rayleigh quotient valid if shift
+C
+        IF((I_PWM.EQ.2).AND.(ABS(SHIFT).LE.SMALL)) THEN
+          IF(JORD.GT.N_TABLE) THEN
+            CALL CONV_SERIES(REAL(ACC),N_TABLE,JORD,R_SN,*555)
+          ENDIF
+        ENDIF
+C
+        IF((ABS(SHIFT).GT.SMALL).AND.(I_PWM.GT.0)) I_PWM=-I_PWM
+        IF(I_PWM.EQ.-2) THEN
+          IF(JORD.GT.N_TABLE) THEN
+            CALL CONV_SERIES(REAL(ACC),N_TABLE,JORD,R_SN1,*555)
+          ENDIF
+        ENDIF
+C
+      ENDDO
+C
+  555 IF(J_INI.EQ.1) THEN
+        WRITE(IUO1,10)
+        WRITE(IUO1,11) SHIFT
+        WRITE(IUO1,46) NLIN
+        WRITE(IUO1,10)
+        WRITE(IUO1,61)
+      ENDIF
+C
+      WRITE(IUO1,10)
+      IF(ABS(SHIFT).LE.SMALL) THEN
+        WRITE(IUO1,44) R_SN(JORD-1)
+      ENDIF
+      WRITE(IUO1,53) R_SN1(JORD-1)
+      WRITE(IUO1,47) JORD-1
+      WRITE(IUO1,10)
+      IF(J_FIN.EQ.N_MAX) THEN
+        IF((I_PWM.EQ.1).OR.(I_PWM.EQ.3)) THEN
+          WRITE(IUO1,213)
+        ELSE
+          WRITE(IUO1,60)
+        ENDIF
+      ENDIF
+C
+      IF(((I_ACC.EQ.1).OR.(I_ACC.EQ.2)).AND.(ABS(SHIFT).LE.SMALL)) THEN
+C
+C  Convergence acceleration on the power method results whenever necessary
+C
+        CALL ACC_CONV(N_CALL,J_INI,J_FIN,N_ACC,K_ACC,K_MAX,I_CONV,
+     &  R_SN,SN,METH)
+        IF(I_ACC.EQ.1) GOTO 111
+        IF((I_CONV.EQ.1).AND.(I_ACC.EQ.2)) GOTO 111
+        IF((I_CONV.EQ.0).AND.(I_ACC.EQ.2)) THEN
+          IF(J_FIN.EQ.N_MAX) THEN
+            GOTO 111
+          ELSE
+            GOTO 120
+          ENDIF
+        ENDIF
+C
+  111   WRITE(IUO1,10)
+        WRITE(IUO1,61)
+        WRITE(IUO1,10)
+        WRITE(IUO1,52) METH
+        WRITE(IUO1,48) CDABS(SN(N_ACC,K_ACC))
+        WRITE(IUO1,49) N_ACC
+        WRITE(IUO1,51) K_ACC
+C
+        IF(I_ACC.EQ.2) THEN
+          OPEN(UNIT=35, FILE='div/n_k_table_pm.lis', STATUS=
+     &    'unknown')
+          K_MAX=MIN(K_MAX,J_FIN)
+          DO L=0,K_MAX
+            NN(L)=L
+          ENDDO
+          WRITE(35,*) '      '
+          WRITE(35,78) E_KIN,METH
+          WRITE(35,*) '      '
+          WRITE(35,198) (NN(K),K=0,K_MAX)
+          WRITE(35,199)
+          WRITE(35,*) '      '
+          DO N=0,K_MAX
+            WRITE(35,200) N,(CDABS(SN(N,K)), K=0,K_MAX-N)
+            WRITE(35,*) '      '
+          ENDDO
+        ENDIF
+C
+        WRITE(IUO1,10)
+        IF(I_ACC.GE.1) WRITE(IUO1,60)
+        IF(I_ACC.EQ.2) THEN
+          IF(I_CONV.EQ.0) WRITE(IUO1,212)
+          WRITE(IUO1,210)
+        ENDIF
+C
+      ENDIF
+C
+      IF((ABS(SHIFT).GT.SMALL).AND.(I_ACC.GT.0)) I_ACC=-I_ACC
+      IF((I_ACC.EQ.-1).OR.(I_ACC.EQ.-2))THEN
+C
+C  Convergence acceleration on the Rayleigh quotient whenever necessary
+C
+        CALL ACC_CONV(N_CALL,J_INI,J_FIN,N_ACC,K_ACC,K_MAX,I_CONV,
+     &  R_SN1,SN,METH)
+        IF(I_ACC.EQ.-1) GOTO 999
+        IF((I_CONV.EQ.1).AND.(I_ACC.EQ.-2)) GOTO 999
+        IF((I_CONV.EQ.0).AND.(I_ACC.EQ.-2)) THEN
+          IF(J_FIN.EQ.N_MAX) THEN
+            GOTO 999
+          ELSE
+            GOTO 120
+          ENDIF
+        ENDIF
+C
+  999   WRITE(IUO1,10)
+        WRITE(IUO1,61)
+        WRITE(IUO1,10)
+        WRITE(IUO1,52) METH
+        WRITE(IUO1,48) CDABS(SN(N_ACC,K_ACC))
+        WRITE(IUO1,49) N_ACC
+        WRITE(IUO1,51) K_ACC
+C
+        IF(I_ACC.EQ.-2) THEN
+          OPEN(UNIT=35, FILE='div/n_k_table_rq.lis', STATUS=
+     &    'unknown')
+          K_MAX=MIN(K_MAX,J_FIN)
+          DO L=0,K_MAX
+            NN(L)=L
+          ENDDO
+          WRITE(35,*) '      '
+          WRITE(35,78) E_KIN,METH
+          WRITE(35,*) '      '
+          WRITE(35,198) (NN(K),K=0,K_MAX)
+          WRITE(35,199)
+          WRITE(35,*) '      '
+          DO N=0,K_MAX
+            WRITE(35,200) N,(CDABS(SN(N,K)), K=0,K_MAX-N)
+            WRITE(35,*) '      '
+          ENDDO
+        ENDIF
+C
+        WRITE(IUO1,10)
+        IF(ABS(I_ACC).GE.1) WRITE(IUO1,60)
+        IF(I_ACC.EQ.-2) THEN
+          IF(I_CONV.EQ.0) WRITE(IUO1,215)
+          WRITE(IUO1,214)
+        ENDIF
+C
+      ENDIF
+C
+C  Writing the results:
+C
+      IF(ABS(I_ACC).LT.2) THEN
+C
+C  No convergence acceleration: power method and Rayleigh quotient
+C
+        IF(ABS(SHIFT).LE.SMALL) THEN
+          WRITE(IUO2,*) E_KIN,R_SN(JORD-1),R_SN1(JORD-1)
+        ELSE
+          WRITE(IUO2,*) E_KIN,R_SN1(JORD-1)
+        ENDIF
+C
+      ELSE
+C
+        IF(I_CONV.EQ.1) THEN
+C
+C  Convergence acceleration has succeeded:
+C
+          WRITE(IUO2,*) E_KIN,REAL(CDABS(SN(N_ACC,K_ACC)))
+C
+        ELSEIF(I_CONV.EQ.0) THEN
+C
+C  Convergence acceleration has failed: power method and
+C         Rayleigh quotient used instead
+C
+          IF(ABS(SHIFT).LE.SMALL) THEN
+            WRITE(IUO2,*) E_KIN,R_SN(JORD-1),R_SN1(JORD-1)
+          ELSE
+            WRITE(IUO2,*) E_KIN,R_SN1(JORD-1)
+          ENDIF
+C
+        ENDIF
+      ENDIF
+C
+ 112  WRITE(IUO1,211)
+C
+      RETURN
+C
+   5  FORMAT(/,11X,'-----------------  EIGENVALUE ANALYSIS ','---------
+     &--------')
+   6  FORMAT(/,11X,'-----------  SHIFTED POWER METHOD ANALYSIS ',' ----
+     &--------')
+  10  FORMAT(11X,'-',54X,'-')
+  11  FORMAT(11X,'-',4X,'SHIFT            ',20X,':   ',F6.3,3X,'-')
+  15  FORMAT(11X,'-',14X,'MAXIMUM MODULUS : ',F9.6,13X,'-')
+  20  FORMAT(11X,'-',14X,'MINIMUM MODULUS : ',F9.6,13X,'-')
+  25  FORMAT(11X,'-',6X,'1 EIGENVALUE IS > 1 ON A TOTAL OF ',I8,6X,'-')
+  30  FORMAT(11X,'-',4X,I5,' EIGENVALUES ARE > 1 ON A TOTAL OF ',I8,2X,
+     &'-')
+  35  FORMAT(11X,'-',11X,'THE ',I3,' LARGER EIGENVALUES ARE :',11X,'-')
+  40  FORMAT(11X,'-',6X,F7.4,2X,F7.4,2X,F7.4,2X,F7.4,2X,F7.4,5X,'-')
+  44  FORMAT(11X,'-',4X,'SPECTRAL RADIUS BY THE POWER METHOD  : ',F8.5,
+     &3X,'-')
+  45  FORMAT(11X,'-',4X,'SPECTRAL RADIUS OF THE KERNEL MATRIX : ',F8.5,
+     &3X,'-')
+  46  FORMAT(11X,'-',4X,'MATRIX SIZE                          : ',I8,
+     &3X,'-')
+  47  FORMAT(11X,'-',4X,'POWER METHOD TRUNCATION ORDER        : ',I8,
+     &3X,'-')
+  48  FORMAT(11X,'-',4X,'SPECTRAL RADIUS BY ACCELERATION      : ',F8.5,
+     &3X,'-')
+  49  FORMAT(11X,'-',4X,'ACCELERATION TRUNCATION ORDER N      : ',I8,
+     &3X,'-')
+  50  FORMAT(11X,'-',4X,'---> THE MULTIPLE SCATTERING SERIES ',
+     &'CONVERGES ',4X,'-')
+  51  FORMAT(11X,'-',4X,'ACCELERATION TRUNCATION ORDER K      : ',I8,
+     &3X,'-')
+  52  FORMAT(11X,'-',4X,'ACCELERATION METHOD                  : ',A10,
+     &1X,'-')
+  53  FORMAT(11X,'-',4X,'SPECTRAL RADIUS BY RAYLEIGH QUOTIENT : ',F8.5,
+     &3X,'-')
+  55  FORMAT(11X,'-',10X,'---> NO CONVERGENCE OF THE MULTIPLE',9X,'-',/
+     &,11X,'-',18X,'SCATTERING SERIES',19X,'-')
+  60  FORMAT(11X,'----------------------------------------','----------
+     &------',/)
+  61  FORMAT(11X,'----------------------------------------','----------
+     &------')
+  65  FORMAT(11X,'-',4X,'    LABEL OF LARGEST EIGENVALUE   :  ',I5,8X,
+     &'-')
+  70  FORMAT(11X,'-',4X,'    LARGEST EIGENVALUE   : ','(',F6.3,',',F6.
+     &3,')',8X,'-')
+  75  FORMAT('              ')
+  76  FORMAT(2X,'ITERATION:      SPECTRAL RADIUS:','      RAYLEIGH 
+     &QUOTIENT:')
+  77  FORMAT(2X,I6,15X,F6.3,15X,F6.3)
+  78  FORMAT(10X,'    E_KIN = ',F6.2,' eV  -- (N,K) TABLE OF ',A10,' 
+     &METHOD')
+  79  FORMAT(2X,'ITERATION:      RAYLEIGH QUOTIENT:')
+  80  FORMAT('    KINETIC ENERGY : ',F7.2,' eV')
+  85  FORMAT('    LARGEST MODULUS OF EIGENVALUE : ',F6.3)
+  90  FORMAT('    LABEL OF LARGEST EIGENVALUE   : ',I5)
+  95  FORMAT('    LARGEST EIGENVALUE            :  (',F6.3,',',F6.3,')
+     &')
+  99  FORMAT(///,12X,' <<<<<<<<<<  DIMENSION OF N_ORD_M IN INCLUDE',' 
+     &FILE  >>>>>>>>>>',/,12X,' <<<<<<<<<<        SHOULD BE AT LEAST ',
+     &I5,  6X,'  >>>>>>>>>>',///)
+ 100  FORMAT(5X,F7.3,2X,F7.3,2X,F6.3)
+ 105  FORMAT(7X,'EIGENVALUES :',3X,'MODULUS :')
+ 110  FORMAT(2X,'-------------------------------')
+ 198  FORMAT('    K',50(I3,4X))
+ 199  FORMAT('  N')
+ 200  FORMAT(I3,50(2X,F5.3))
+ 210  FORMAT(//,'   --->  THE (N,K) TABLE HAS BEEN WRITTEN ','IN /div/
+     &n_k_table_pm.lis',//)
+ 211  FORMAT(//,'   --->  THE EVOLUTION OF THE SPECTRAL RADIUS ','HAS 
+     &BEEN WRITTEN IN /div/radius_conv.lis',//)
+ 212  FORMAT(//,10X,'   !!!!! THE POWER METHOD HAS NOT CONVERGED YET  
+     &','!!!!!')
+ 213  FORMAT(11X,'------------  NO CONVERGENCE CHECK WAS MADE ','------
+     &------')
+ 214  FORMAT(//,'   --->  THE (N,K) TABLE HAS BEEN WRITTEN ','IN /div/
+     &n_k_table_rq.lis',//)
+ 215  FORMAT(//,8X,'   !!!!! THE RAYLEIGH QUOTIENT HAS NOT CONVERGED',
+     &' YET  !!!!!')
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE ACC_CONV(N_CALL,J_INI,J_FIN,N_ACC,K_ACC,K_MAX,I_CONV,
+     &R_SN,SN,METH)
+C
+C  Use of the various acceleration scheme on a scalar series
+C
+C                 AITK : Aitken, modified Aitken
+C                 RICH : Richardson
+C                 SALZ : Salzer
+C                 EPSI : epsilon
+C                 EPSG : generalized epsilon
+C                 RHOA : rho
+C                 THET : theta
+C                 LEGE : Legendre-Toeplitz
+C                 CHEB : Chebyshev-Toeplitz
+C                 OVER : Overholt
+C                 DURB : Durbin
+C                 DLEV : Levin d-transform  !!  differ by the
+C                 TLEV : Levin t-transform  !!  choice of w_n
+C                 ULEV : Levin u-transform  !!  the remainder
+C                 VLEV : Levin v-transform  !!  estimate given
+C                 ELEV : Levin e-transform  !!  by I_WN
+C                 EULE : generalized Euler transform
+C                 GBWT : Germain-Bronne-Wimp transform
+C                 VARI : various algorithms : Weniger, BDG, iterated rho
+C                 ITHE : iterated theta : Lubkin, iterated theta, modified Aitken 2
+C                 EALG : E-algorithm
+C
+C  SN : series to be accelerated
+C  XN : auxilliary series (chosen with I_XN) : interpolation points
+C  GN : auxilliary series (chosen with I_GN) ---> E algorithm
+C
+C  N_DIV : number of SN(N+M,L), M > 0 and L < K+1,  necessary to compute S(N,K+1)
+C          example: iterated Aitken method, we need SN(N,K), SN(N+1,K) and SN(N+2,K)
+C                   so N_DIV=2
+C          Because of this only (N_TABLE/N_DIV,N_TABLE/N_DIV) (n,k) tables are
+C          meaningful. Hence the K_MAX size
+C
+C  COL_M : type of columns meaningful in the (n,k) table (example: even columns
+C          for the epsilon algorithm)
+C
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified :  1 Mar 2013
+C
+C
+C      INCLUDE 'spec.inc'
+      USE DIM_MOD
+      USE CONVACC_MOD, L => LEVIN
+      USE CONVTYP_MOD
+C
+      PARAMETER (N_METH=24)
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M)
+C
+      COMPLEX*16 ZEROC,ONEC
+C
+      REAL*8 R2_SN(N_ORD_M),RHO
+C
+      REAL R_SN(N_ORD_M)
+C
+      INTEGER N_DIV(N_METH)
+C
+      CHARACTER*3 COL_M(N_METH)
+      CHARACTER*4 SCHE(N_METH)
+      CHARACTER*10 NAME(N_METH),METH
+C
+      DATA SCHE /'AITK','RICH','EPSI','RHOA','THET','LEGE',
+     1           'CHEB','OVER','DURB','DLEV','TLEV','ULEV',
+     2           'VLEV','ELEV','EULE','GBWT','EALG','SALZ',
+     3           'VARI','ITHE','EPSG','NONE','NONE','NONE'/
+      DATA NAME /'  AITKEN  ','RICHARDSON','  EPSILON ',
+     1           '   RHO    ','  THETA   ',' LEGENDRE ',
+     2           'CHEBYSHEV ',' OVERHOLT ','  DURBIN  ',
+     3           ' D LEVIN  ',' T LEVIN  ',' U LEVIN  ',
+     4           ' V LEVIN  ',' E LEVIN  ','  EULER   ',
+     5           '   GBW    ','    E     ','  SALZER  ',
+     6           '  VARIA   ','ITER THETA',' EPSILON G',
+     7           '          ','          ','          '/
+      DATA COL_M /'ALL','ALL','EVE','EVE','EVE','ALL',
+     1            'ALL','ALL','ALL','ALL','ALL','ALL',
+     2            'ALL','ALL','ALL','ALL','ALL','ALL',
+     3            'ALL','ALL','EVE','ALL','ALL','ALL'/
+      DATA N_DIV /2,1,1,2,2,1,
+     1            1,1,4,1,1,1,
+     2            1,1,1,1,1,1,
+     3            2,4,1,1,1,1/
+C
+      J_NAME=0
+      I_COL=0
+C
+      ZEROC=(0.D0,0.D0)
+      ONEC=(1.D0,0.D0)
+C
+      DO J=J_INI,J_FIN
+        R2_SN(J)=DBLE(R_SN(J))
+      ENDDO
+C
+C  Finding the name of the method
+C
+      DO JM=1,N_METH
+C
+        IF(METHOD.EQ.SCHE(JM)) THEN
+           J_NAME=JM
+           K_MAX=N_MAX/N_DIV(JM)
+           N_COEF=N_DIV(JM)
+           IF(COL_M(JM).EQ.'EVE') I_COL=2
+        ENDIF
+C
+      ENDDO
+C
+C  Initialization of array SN
+C
+      DO N=J_INI,J_FIN
+C
+        DO K=-1,J_FIN
+C
+         SN(N,K)=ZEROC
+C
+        ENDDO
+C
+      ENDDO
+C
+C  Initialisation of the schemes :
+C
+C   --  SN(N,0) is the series to be accelerated  --
+C
+      SN(0,-1)=ZEROC
+      SN(0,0)=ONEC
+C
+      DO N=J_INI,J_FIN
+C
+        SN(N,-1)=ZEROC
+        SN(N,0)=R2_SN(N)
+C
+      ENDDO
+C
+      CALL ACC_SCAL(J_INI,J_FIN,METHOD,SN)
+C
+C  Check for convergence : all results equal within ACC
+C     in a N_TABLE x N_TABLE square
+C
+      IF(I_CONV.EQ.0) THEN
+        CALL CHECK_CONV(J_INI,J_FIN,N_TABLE,I_CONV,N_ACC,K_ACC,K_MAX,
+     &  N_COEF,I_COL,ACC,RHO,SN)
+      ENDIF
+C
+      IF(METHOD(2:4).EQ.'LEV') THEN
+        METH=NAME(J_NAME)(1:9)//CHAR(48+I_WN)
+      ELSE
+        METH=NAME(J_NAME)
+      ENDIF
+C
+C  Incrementation of the number of calls to this subroutine
+C         if convergence has not been achieved
+C
+      IF((I_CONV.EQ.0).OR.(ABS(I_ACC).EQ.2)) THEN
+        N_CALL=N_CALL+1
+      ELSE
+        GOTO 10
+      ENDIF
+C
+C  Printing the results in the check file
+C
+  15  FORMAT(2X,'*',3X,I3,5X,'(',E12.6,',',E12.6,')',3X,'(',E12.6,',',
+     &E12.6,')',5X,'*')
+  16  FORMAT(2X,'*',3X,I3,5X,'(',E12.6,',',E12.6,')',35X,'*')
+  17  FORMAT(2X,'*',3X,I3,' --->','(',E12.6,',',E12.6,')',35X,'*')
+  18  FORMAT(2X,'*',3X,I3,' --->','(',E12.6,',',E12.6,')',3X,'(',E12.6,
+     &',',E12.6,')',5X,'*')
+  19  FORMAT(2X,'*',3X,I3,25X,'(',E12.6,',',E12.6,')',20X,'*')
+  21  FORMAT(2X,'*',3X,I3,25X,'(',E12.6,',',E12.6,')','  <--- 
+     &convergence',2X,'*')
+  25  FORMAT(2X,'*',3X,I3,5X,'(',E12.6,',',E12.6,')',3X,'(',E12.6,',',
+     &E12.6,')',3X,'  *  <--- convergence')
+  35  FORMAT(2X,'***************************************','************
+     &************************')
+  45  FORMAT(2X,'*                                      ','            
+     &                       *')
+  65  FORMAT(2X,'*              Exact result S = (',E12.6,',',E12.6,') 
+     &              *')
+  75  FORMAT(2X,'*   Order              Taylor ',20X,A10,'             
+     & *')
+ 105  FORMAT(2X,'*    Convergence          ',A4,26X,A4,14X,'*',/2X,'*  
+     &     order ',60X,'*')
+ 133  FORMAT(//,5X,'<<<<<<<<<<  THIS METHOD IS NOT IMPLEMENTED ',
+     &'>>>>>>>>>>',//)
+C
+  10  RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE ACC_SCAL(J_INI,J_FIN,METHOD,SN)
+C
+C  This subroutine computes the scalar convergence acceleration
+C    for various methods
+C
+C  Note: let us consider that the (n,k) space pattern indicates
+C        that we need S(n,k),...,S(n+p,k) in order to compute
+C        S(n,k+1). We call N the maximum value of n for which
+C        the S(n,0) are known. Then, to compute S(n,k+1), we
+C        we need to know up to S(n+pk+p,0). This means that
+C        the value of n is limited to N-pk-p.
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 14 Mar 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+      USE CONVACC_MOD, L => LEVIN
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M),XN(-1:N_ORD_M)
+      COMPLEX*16 NK(-1:3*N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 SI(-1:N_ORD_M),TN(-1:N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 GN(-1:N_ORD_M,-1:N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 DELTA1,DELTA2,DELTA3,DELTA4,DELTA5
+      COMPLEX*16 NUM,DEN,FIR
+      COMPLEX*16 VAR,A,B,C,ZEROC,ONEC,XK
+C
+      REAL*8 EPS,EPSS,MUL
+C
+      CHARACTER*4 METHOD
+C
+      DATA EPS,EPSS  /1.D-12,1.D-150/
+C
+      ZEROC=(0.D0,0.D0)
+      ONEC=(1.D0,0.D0)
+C
+      N_APP=J_FIN
+      N_INI=0
+C
+      IF(METHOD.EQ.'AITK') THEN
+C
+C            The iterated Aitken and modified Aitken schemes
+C
+C       H. H. H. Homeier, Num. Alg. 8, 47 (1994)
+C
+C            I_VA = 1 : iterated Aitken            (p 49 eq 5)
+C            I_VA = 2 : modified iterated Aitken   (p 49 eq 9)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          IF(I_VA.EQ.1) THEN
+            XK=ONEC
+          ELSEIF(I_VA.EQ.2) THEN
+            XK=ONEC*DFLOAT(K+K+1)/DFLOAT(K+1)
+          ENDIF
+C
+          DO N=N_INI,N_APP-2*K-2
+C
+            DELTA1=(SN(N+1,K)-SN(N,K))
+            DELTA2=(SN(N+2,K)-SN(N+1,K))
+            IF(CDABS(DELTA2).LT.EPSS) THEN
+              DELTA3=ZEROC
+            ELSE
+              DELTA3=DELTA1*DELTA1/(DELTA2-DELTA1)
+            ENDIF
+            SN(N,K+1)=SN(N,K)-XK*DELTA3
+            N_COUNT=N_COUNT+1
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'RICH') THEN
+C
+C            The Richardson scheme
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-2
+C
+            DELTA1=SN(N+1,0)-SN(N,0)
+            DELTA2=SN(N+K+2,0)-SN(N+K+1,0)
+            IF(CDABS(DELTA2-DELTA1).LT.EPSS) GOTO 10
+            SN(N,K+1)=(SN(N+1,K)*DELTA1-SN(N,K)*DELTA2)/(DELTA1-
+     &      DELTA2)
+            N_COUNT=N_COUNT+1
+C
+  10        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'SALZ') THEN
+C
+C            The Salzer scheme
+C
+C      A. Hautot, http://physinfo.org/Acc_Conv/Acc_Conv_Part4.pdf (p 12)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-1
+C
+            DELTA1=DFLOAT(N+K+2)
+            DELTA2=DFLOAT(N+1)
+            IF(CDABS(DELTA2-DELTA1).LT.EPSS) GOTO 11
+            SN(N,K+1)=(SN(N+1,K)*DELTA1-SN(N,K)*DELTA2)/(DELTA1-
+     &      DELTA2)
+            N_COUNT=N_COUNT+1
+C
+  11        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'GBWT') THEN
+C
+C            The GBW scheme
+C
+C     E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C                (eq 6.1-5 p33)
+C
+        N_COUNT=0
+C
+        CALL INTERP_POINTS(I_XN,2*N_APP,ALPHA,BETA,SN,XN)
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-1
+C
+            DELTA1=XN(N)
+            DELTA2=XN(N+K+1)
+            IF(CDABS(DELTA1-DELTA2).LT.EPSS) GOTO 80
+C
+            SN(N,K+1)=(DELTA1*SN(N+1,K)-DELTA2*SN(N,K))/(DELTA1-
+     &      DELTA2)
+            N_COUNT=N_COUNT+1
+C
+  80        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'EPSI') THEN
+C
+C            The epsilon scheme
+C
+C          E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989) (p 21 eq 4-2-1)
+C          A. Salam, J. Comput. Appl. Math 46, 455 (1993) (p 456)
+C
+        N_COUNT=0
+C
+        CALL INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-1
+C
+            DELTA1=(SN(N+1,K)-SN(N,K))
+            IF(CDABS(DELTA1).LT.EPSS) GOTO 20
+            IF(I_VA.EQ.1) THEN
+              VAR=ONEC
+            ELSEIF(I_VA.EQ.2) THEN
+              VAR=XN(N+1)-XN(N)
+            ELSEIF(I_VA.EQ.3) THEN
+              VAR=XN(N+K+1)-XN(N+K)
+            ENDIF
+            SN(N,K+1)=SN(N+1,K-1)+VAR/DELTA1
+            N_COUNT=N_COUNT+1
+C
+  20        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'EPSG') THEN
+C
+C            The generalized epsilon scheme
+C
+C             M. N. Barber and C. J. Hamer,
+C    J. Austral. Math. Soc. (Series B) 23, 229 (1982)
+C
+C    DELTA1 = 0 implies SN(N,K+1) = 0 (calculation not performed)
+C    DELTA2 = 0 implies SN(N+1,K) = SN(N,K)
+C           ---> convergence achieved for (N,K)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP,2
+C
+          IF(I_VA.EQ.1) THEN
+            SI(K)=ALPHA
+            SI(K+1)=ALPHA
+          ELSEIF(I_VA.EQ.2) THEN
+            SI(K)=ZEROC
+            SI(K+1)=-ONEC
+          ENDIF
+C
+        ENDDO
+C
+        VAR=ONEC
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-1
+C
+            NK(N,-1)=ZEROC
+            DELTA2=(SN(N+1,K)-SN(N,K))
+            IF(CDABS(DELTA2).LT.EPSS) GOTO 23
+            NK(N,K)=SI(K)*NK(N,K-1)+VAR/DELTA2
+            DELTA1=(NK(N,K)-NK(N-1,K))
+            IF(CDABS(DELTA1).LT.EPSS) GOTO 23
+            SN(N,K+1)=SN(N,K)+VAR/DELTA1
+            N_COUNT=N_COUNT+1
+  23        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'RHOA') THEN
+C
+C            The rho scheme
+C
+C     E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C
+C          I_VA = 1 :  Osada's formulation (p 87 eq 11-2-1)
+C          I_VA = 2 :  Standard rho        (p 34 eq 6.2-2)
+C          I_VA = 3 :                      (p 37 eq 6.3-3) ???????
+C
+C        ALPHA is the decay parameter. It is
+C        generally advised to take it as
+C        an integer to ensure convergence
+C
+        IF(DREAL(ALPHA).LT.0.0D0) THEN
+C
+C  Drummond approximation to alpha :
+C
+C   (non valid for the Taylor expansion
+C    of 1/1+x as in this case the denominator
+C    is always zero)
+C
+          DO N=N_INI,N_APP
+C
+            DELTA1=SN(N+3,1)-SN(N+2,1)
+            DELTA2=SN(N+2,1)-SN(N+1,1)
+            DELTA3=SN(N+1,1)-SN(N,1)
+C
+            NUM=(DELTA2-DELTA3)*(DELTA1-DELTA2)
+            DEN=(DELTA1-DELTA2)*DELTA2-(DELTA2-DELTA3)*DELTA1
+            ALPHA=NUM/DEN-ONEC
+C
+          ENDDO
+C
+        ENDIF
+C
+        N_COUNT=0
+C
+        CALL INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+C
+        DO K=0,N_APP-1
+C
+            DO N=N_INI,N_APP-K-1
+C
+              IF(I_VA.NE.3) THEN
+                DEN=(SN(N+1,K)-SN(N,K))
+              ELSE
+                DELTA2=(SN(N+2,K)-SN(N+1,K))
+                DELTA3=(SN(N+1,K)-SN(N,K))
+                DEN=(XN(N+2*K)-XN(N+1))*DELTA3-(XN(N+2*K-1)-
+     &          XN(N))*DELTA2
+              ENDIF
+C
+              IF(CDABS(DEN).LT.EPS) GOTO 30
+              IF((I_VA.EQ.3).AND.(N.EQ.(N_APP-K-1))) GOTO 30
+C
+              IF(I_VA.EQ.1) THEN
+                NUM=(DFLOAT(K+1)+ALPHA)
+              ELSEIF(I_VA.EQ.2) THEN
+                NUM=XN(N+K+1)-XN(N)
+              ELSEIF(I_VA.EQ.3) THEN
+                NUM=(XN(N+2*K+1)-XN(N))*DELTA2*DELTA3
+              ENDIF
+C
+              SN(N,K+1)=SN(N+1,K-1)+NUM/DEN
+              N_COUNT=N_COUNT+1
+C
+  30          CONTINUE
+C
+            ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'THET') THEN
+C
+C            The theta scheme
+C
+C     E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C     E. Calicetti et al, Phys. Rep. 446, 1 (2007)
+C
+C           I_VA = 1 : standard formulation     (eq 71 p 19)
+C           I_VA = 2 : generalized formulation  (eq 10.1-10 p 74)
+C
+        KMAX2=(N_APP-2)/2
+C
+        N_COUNT=0
+        CALL INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+C
+        DO K=0,KMAX2
+C
+          IF(I_VA.EQ.3) GOTO 51
+C
+          DO N=N_INI,N_APP-2*K-1
+C
+            DEN=SN(N+1,2*K)-SN(N,2*K)
+            IF(CDABS(DEN).LT.EPSS) GOTO 40
+            IF(I_VA.EQ.1) THEN
+              NUM=1.D0
+            ELSEIF(I_VA.EQ.2) THEN
+              NUM=XN(N+2*K+1)-XN(N)
+            ENDIF
+            SN(N,2*K+1)=SN(N+1,2*K-1)+NUM/DEN
+            N_COUNT=N_COUNT+1
+C
+  40        CONTINUE
+C
+          ENDDO
+C
+          DO N=N_INI,N_APP-4*K-2
+C
+            DELTA2=SN(N+2,2*K)-SN(N+1,2*K)
+            DELTA3=SN(N+1,2*K+1)-SN(N,2*K+1)
+            DELTA4=SN(N+2,2*K+1)-SN(N+1,2*K+1)
+C
+            IF(I_VA.EQ.1) THEN
+              NUM=DELTA2*DELTA4
+              DEN=DELTA4-DELTA3
+            ELSEIF(I_VA.EQ.2) THEN
+              NUM=(XN(N+2*K+2)-XN(N))*DELTA2*DELTA4
+              DEN=(XN(N+2*K+2)-XN(N+1))*DELTA3-(XN(N+2*K+1)-XN(
+     &        N))*DELTA4
+            ENDIF
+            IF(CDABS(DEN).LT.EPSS) GOTO 50
+C
+            SN(N,2*K+2)=SN(N+1,2*K)+NUM/DEN
+C
+            N_COUNT=N_COUNT+1
+C
+  50        CONTINUE
+C
+          ENDDO
+          GOTO 52
+C
+  51      DO N=N_INI,N_APP-4*K-3
+C
+            DELTA1=SN(N+1,K)-SN(N,K)
+            DELTA2=SN(N+2,K)-SN(N+1,K)
+            DELTA3=SN(N+3,K)-SN(N+2,K)
+            DELTA4=DELTA3-DELTA2
+            DELTA5=DELTA2-DELTA1
+            DEN=DELTA3*DELTA5-DELTA1*DELTA4
+            IF(CDABS(DEN).LT.EPSS) GOTO 53
+C
+            NUM=DELTA1*DELTA2*DELTA4
+            SN(N,K+1)=SN(N+1,K)-NUM/DEN
+C
+            N_COUNT=N_COUNT+1
+C
+  53        CONTINUE
+C
+          ENDDO
+C
+  52      CONTINUE
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'LEGE') THEN
+C
+C            The Legendre-Toeplitz scheme
+C
+C      D. A. Smith and W. F. Ford, SIAM J. Numer. Anal. 16, 223 (1979)
+C                   eq. (4.3), (4.4) p. 231
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DELTA1=DFLOAT(K+K+1)/DFLOAT(K+1)
+          DELTA2=DFLOAT(K)/DFLOAT(K+1)
+C
+          DO N=N_INI,N_APP-K-1
+            SN(N,K+1)=DELTA1*(2.D0*SN(N+1,K)-SN(N,K))-DELTA2*SN(
+     &      N,K-1)
+            N_COUNT=N_COUNT+1
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'CHEB') THEN
+C
+C            The Chebyshev-Toeplitz scheme
+C
+C      D. A. Smith and W. F. Ford, SIAM J. Numer. Anal. 16, 223 (1979)
+C                       eq. (4.4) - (4.9) p. 231
+C
+        SI(0)=ONEC
+        SI(1)=3.D0*ONEC
+C
+        DO N=N_INI,N_APP-1
+C
+          TN(N,0)=SN(N,0)
+          TN(N,1)=SN(N,0)+2.D0*TN(N+1,0)
+          SN(N,0)=TN(N,0)/SI(0)
+          SN(N,1)=TN(N,1)/SI(1)
+C
+        ENDDO
+C
+        N_COUNT=0
+C
+        DO K=1,N_APP-1
+C
+          SI(K+1)=6.D0*SI(K)-SI(K-1)
+C
+          DO N=N_INI,N_APP-K-1
+C
+            TN(N,K+1)=2.D0*TN(N,K)+4.D0*TN(N+1,K)-TN(N,K-1)
+            SN(N,K+1)=TN(N,K+1)/SI(K+1)
+            N_COUNT=N_COUNT+1
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'OVER') THEN
+C
+C            The Overholt scheme
+C
+C          H. H. H. Homeier, J. Mol. Struc. (Theochem) 368, 81 (1996)
+C                            (eq 36 p 85)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-2
+C
+            DELTA1=ONEC
+            DELTA2=ONEC
+            MUL=1.D0
+C
+            DO I=1,K+1
+C
+              DELTA1=DELTA1*(SN(N+K+1,0)-SN(N+K,0))
+              DELTA2=DELTA2*(SN(N+K+2,0)-SN(N+K+1,0))
+              MUL=MUL*EPS
+C
+            ENDDO
+C
+            IF(CDABS(DELTA1-DELTA2).LT.MUL) GOTO 60
+C
+            SN(N,K+1)=(DELTA1*SN(N+1,K)-DELTA2*SN(N,K))/(DELTA1-
+     &      DELTA2)
+            N_COUNT=N_COUNT+1
+C
+  60        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'DURB') THEN
+C
+C            The Durbin scheme
+C
+C        C. Brezinski and M. Redivo Zaglia, Comput. Appl. Math. 26, 171 (2007)
+C                 (eq 25 p 185)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-4*K-4
+C
+            DELTA1=3.D0*SN(N+2,K)*SN(N+2,K)-4.D0*SN(N+1,K)*SN(N+
+     &      3,K)+SN(N,K)*SN(N+4,K)
+            DELTA2=6.D0*SN(N+2,K)-4.D0*(SN(N+1,K)+SN(N+3,K))+SN(
+     &      N,K)+SN(N+4,K)
+            IF(CDABS(DELTA2).LT.EPSS) GOTO 70
+            SN(N,K+1)=DELTA1/DELTA2
+            N_COUNT=N_COUNT+1
+C
+  70        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD(2:4).EQ.'LEV') THEN
+C
+C            The Levin schemes
+C
+        CALL LEVIN(ALPHA,BETA,SN,I_WN,I_XN,N_APP,N_INI,L,N_COUNT,
+     &  METHOD(1:1))
+C
+      ELSEIF(METHOD.EQ.'EULE') THEN
+C
+C            The generalized Euler scheme
+C
+C      D. A. Smith and W. F. Ford, SIAM J. Numer. Anal. 16, 223 (1979)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-K-1
+C
+            SN(N,K+1)=(SN(N+1,K)-BETA*SN(N,K))/(ONEC-BETA)
+            N_COUNT=N_COUNT+1
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'VARI') THEN
+C
+C            Various schemes
+C
+C          I_VA = 1 : Weniger lambda scheme (p 87 eq 11-2-1)
+C          I_VA = 2 : Weniger sigma scheme  (p 87 eq 11-2-2)
+C          I_VA = 3 : Weniger mu scheme     (p 87 eq 11-2-3)
+C          I_VA = 4 : iterated rho scheme
+C          I_VA = 5 : Bjorstad, Dahlquist and Grosse scheme (p 77 eq 6-3-4)
+C
+C          E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C
+        N_COUNT=0
+C
+        CALL INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-2*K-2
+C
+            IF(I_VA.EQ.1) THEN
+              A=BETA+DFLOAT(N)
+              B=A+ONEC
+              C=A
+            ELSEIF(I_VA.EQ.2) THEN
+              A=ALPHA+DFLOAT(N+K)
+              B=A+ONEC
+              C=A
+            ELSEIF(I_VA.EQ.3) THEN
+              A=ALPHA+DFLOAT(N-K)
+              B=A+ONEC
+              C=A
+            ELSEIF(I_VA.EQ.4) THEN
+              A=XN(N+2*K+2)-XN(N)
+              B=XN(N+2*K+1)-XN(N)
+              C=XN(N+2*K+2)-XN(N+1)
+            ELSEIF(I_VA.EQ.5) THEN
+              A=(DFLOAT(2*K+1)+ALPHA)/(DFLOAT(2*K)+ALPHA)
+              B=ONEC
+              C=ONEC
+            ENDIF
+C
+            DELTA1=SN(N+1,K)-SN(N,K)
+            DELTA2=SN(N+2,K)-SN(N+1,K)
+            DEN=B*DELTA2-C*DELTA1
+            IF(CDABS(DEN).LT.EPSS) GOTO 81
+            SN(N,K+1)=SN(N+1,K)-A*DELTA1*DELTA2/DEN
+            N_COUNT=N_COUNT+1
+C
+  81        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'ITHE') THEN
+C
+C               Iterated theta schemes
+C
+C       R. Thukral, Appl. Math. Comput. 187, 1502 (2007) <--- Lubkin
+C       E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C
+C         I_VA = 1 : Lubkin transform = iterated theta transform (p 79 eq 10-3-6)
+C         I_VA = 2 : iterated theta transform                    (p 84 eq 11-1-5)
+C         I_VA = 3 : 2nd modified iterated Aitken transform      (p 85 eq 11-1-12)
+C
+        N_COUNT=0
+C
+        DO K=0,N_APP-1
+C
+          DO N=N_INI,N_APP-3*K-3
+C
+            DELTA1=SN(N+1,K)-SN(N,K)
+            DELTA2=SN(N+2,K)-SN(N+1,K)
+            DELTA3=SN(N+3,K)-SN(N+2,K)
+            IF(I_VA.EQ.1) THEN
+              NUM=-DELTA1*DELTA2*(DELTA3-DELTA2)
+              DEN=DELTA3*(DELTA2-DELTA1)-DELTA1*(DELTA3-DELTA2)
+              FIR=SN(N+1,K)
+            ELSEIF(I_VA.EQ.2) THEN
+              NUM=DELTA1*DELTA1*DELTA1*(DELTA3-DELTA2)
+              DEN=DELTA1*DELTA1*(DELTA3-DELTA2)-DELTA2*DELTA2*(
+     &        DELTA2-DELTA1)
+              FIR=SN(N+1,K)
+            ELSEIF(I_VA.EQ.3) THEN
+              NUM=DELTA2*DELTA2*DELTA3*(DELTA3-DELTA2)
+              DEN=DELTA2*DELTA2*(DELTA3-DELTA2)-DELTA3*DELTA3*(
+     &        DELTA2-DELTA1)
+              FIR=SN(N+2,K)
+            ENDIF
+C
+            IF(CDABS(DEN).LT.EPSS) GOTO 90
+            SN(N,K+1)=FIR+NUM/DEN
+            N_COUNT=N_COUNT+1
+C
+  90        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(METHOD.EQ.'EALG') THEN
+C
+C            E algorithm
+C
+        N_COUNT=0
+C
+        CALL INTERP_POINTS(I_XN,2*N_APP,ALPHA,BETA,SN,XN)
+        CALL REMAIN_SERIES(I_GN,N_APP,SN,XN,GN)
+C
+C  Computing the GN(N,K,I)
+C
+        DO K=1,N_APP
+C
+          DO N=N_INI,N_APP
+C
+            DEN=GN(N+1,K-1,K)-GN(N,K-1,K)
+            IF(CDABS(DEN).LT.EPSS) GOTO 91
+            DELTA1=GN(N,K-1,K)/DEN
+C
+            DO I=0,N_APP
+C
+              NUM=GN(N+1,K-1,I)-GN(N,K-1,I)
+              GN(N,K,I)=GN(N,K-1,I)-NUM*DELTA1
+C
+            ENDDO
+C
+  91        CONTINUE
+C
+          ENDDO
+C
+        ENDDO
+C
+C  Computing SN(N,K)
+C
+        DO K=1,N_APP
+C
+          DO N=N_INI,N_APP-K
+C
+            DEN=GN(N+1,K-1,K)-GN(N,K-1,K)
+            IF(CDABS(DEN).LT.EPSS) GOTO 92
+            DELTA1=GN(N,K-1,K)/DEN
+            SN(N,K)=SN(N,K-1)-(SN(N+1,K-1)-SN(N,K-1))*DELTA1
+C
+  92        CONTINUE
+C
+          ENDDO
+C
+         ENDDO
+C
+      ENDIF
+C
+      RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE COEFFICIENTS(N_APP,COEF,BETA,I_SWITCH)
+C
+C       Binomial coefficients     ---> ISWITCH = 1
+C       Power coefficients        ---> ISWITCH = 2
+C       Pochhammer coefficients   ---> ISWITCH = 3
+C       Pochhammer coefficients   ---> ISWITCH = 4 (negative argument)
+C
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 28 Sep 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      COMPLEX*16 COEF(-1:3*N_ORD_M,-1:N_ORD_M),BETA,ONEC
+C
+      ONEC=(1.D0,0.D0)
+C
+      COEF(0,0)=ONEC
+      COEF(1,0)=ONEC
+      COEF(1,1)=ONEC
+C
+      IF(I_SWITCH.EQ.1) THEN
+C
+        DO N=2,N_APP-1
+C
+          COEF(N,0)=ONEC
+          COEF(N,1)=DCMPLX(N)
+C
+          DO K=2,N
+C
+            COEF(N,K)=COEF(N-1,K-1)+COEF(N-1,K)
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(I_SWITCH.EQ.2) THEN
+C
+        DO N=0,N_APP
+C
+          COEF(N,0)=ONEC
+          COEF(N,1)=BETA+DFLOAT(N)
+C
+          DO K=1,N_APP
+C
+            COEF(N,K)=COEF(N,K-1)*(BETA+DFLOAT(N))
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(I_SWITCH.EQ.3) THEN
+C
+        DO N=0,N_APP
+C
+          COEF(N,0)=ONEC
+C
+          DO K=1,N_APP
+C
+            COEF(N,K)=COEF(N,K-1)*(BETA+DFLOAT(N+K-1))
+C
+          ENDDO
+C
+        ENDDO
+C
+      ELSEIF(I_SWITCH.EQ.4) THEN
+C
+        DO N=0,N_APP
+C
+          COEF(N,0)=ONEC
+C
+          DO K=1,N_APP
+C
+            COEF(N,K)=COEF(N,K-1)*(-BETA-DFLOAT(N+K-1))
+C
+          ENDDO
+C
+        ENDDO
+C
+      ENDIF
+C
+      RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE LEVIN(ALPHA,BETA,SN,I_WN,I_XN,N_APP,N_INI,L,N_COUNT,
+     &OMEGA)
+C
+C  This subroutine computes Levin-type transforms of
+C    a given sequence SN(N,1)
+C
+C     E. J. Weniger, Comp. Phys. Rep. 10, 189 (1989)
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 28 Feb 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M),AN(-1:N_ORD_M),WN(-1:
+     &N_ORD_M)
+      COMPLEX*16 COEF(-1:3*N_ORD_M,-1:N_ORD_M),ZEROC,ONEC
+      COMPLEX*16 COEL(-1:3*N_ORD_M,-1:N_ORD_M),XN(-1:N_ORD_M)
+      COMPLEX*16 DEN(-1:N_ORD_M,-1:N_ORD_M),NUM(-1:N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 X,XK,XXK,ALPHA,BETA,INC,SUM_1,SUM_2
+C
+      CHARACTER*1 OMEGA
+C
+      ZEROC=(0.D0,0.D0)
+      ONEC=(1.D0,0.D0)
+C
+C  Recovery of the original series elements
+C
+      DO N=N_INI,N_APP
+C
+        AN(N)=SN(N,0)-SN(N-1,0)
+C
+      ENDDO
+C
+C
+C  Choice of the remainder estimate omega_n
+C
+C  Reference : H. H. H. Homeier, J. Comput. App. Math. 122, 81 (2000)
+C
+C
+      IF(OMEGA.EQ.'U') THEN
+C
+        MAX_N=N_APP
+C
+        DO N=N_INI,MAX_N
+          WN(N)=AN(N)*(DFLOAT(N)+BETA)
+        ENDDO
+C
+      ELSEIF(OMEGA.EQ.'V') THEN
+C
+        MAX_N=N_APP-1
+C
+        DO N=N_INI,MAX_N
+          WN(N)=AN(N)*AN(N+1)/(AN(N)-AN(N+1))
+        ENDDO
+C
+      ELSEIF(OMEGA.EQ.'T') THEN
+C
+        MAX_N=N_APP
+C
+        DO N=N_INI,MAX_N
+          WN(N)=AN(N)
+        ENDDO
+C
+      ELSEIF(OMEGA.EQ.'D') THEN
+C
+        MAX_N=N_APP-1
+C
+        DO N=N_INI,MAX_N
+          WN(N)=AN(N+1)
+        ENDDO
+C
+      ELSEIF(OMEGA.EQ.'E') THEN
+C
+        MAX_N=N_APP-2
+C
+        DO N=N_INI,MAX_N
+          WN(N)=AN(N)*AN(N+2)/AN(N+1)
+        ENDDO
+C
+      ENDIF
+C
+C  Choice of the Levin-type transform
+C
+C     I_WN = 1 ---> L-type                     (eq 7.2-8 p 41) (eq 3-13b p 10)
+C     I_WN = 2 ---> S-type                     (eq 8.3-7 p 58) (eq 3-14b p 10)
+C     I_WN = 3 ---> M-type  !! BETA > K-1      (eq 9.3-7 p 66) (eq 3-15b p 10)
+C     I_WN = 4 ---> C-type                                     (eq 3-16c p 11)
+C     I_WN = 5 ---> Drummond-type              (eq 9.5-5 p 70)
+C     I_WN = 6 ---> R-type                     (eq 7.14-12 p 47)
+C
+C  References : E. J. Weniger, J. Math. Phys. 45 1209 (2004)
+C               E. J. Weniger, Comp. Phys. Rep. 10 189 (1989)
+C
+C
+C  Check for the possibility of L extension (the standard case is L = 0)
+C
+      IF(L.GT.0) THEN
+        IF(I_WN.EQ.1) THEN
+          CALL COEFFICIENTS(MAX_N,COEL,BETA,2)
+          DO N=N_INI,MAX_N
+            WN(N)=WN(N)*COEL(N,L)
+          ENDDO
+        ELSEIF(I_WN.EQ.2) THEN
+          CALL COEFFICIENTS(N_APP,COEL,BETA,3)
+          DO N=N_INI,MAX_N
+            WN(N)=WN(N)*COEL(N,L)
+          ENDDO
+        ELSEIF(I_WN.EQ.3) THEN
+          CALL COEFFICIENTS(N_APP,COEL,BETA,4)
+          DO N=N_INI,MAX_N
+            WN(N)=WN(N)*COEL(N,L)
+          ENDDO
+        ENDIF
+      ENDIF
+C
+      DO N=N_INI,MAX_N
+C
+        X=BETA+DFLOAT(N)
+        COEF(N,0)=ONEC
+C
+        DO K=1,N_APP
+C
+          XK=DFLOAT(K)
+          XXK=X+XK
+C
+          IF(I_WN.EQ.1) THEN
+            INC=XXK/(XXK+ONEC)
+            COEF(N,K)=X*(INC**K)/XXK
+          ELSEIF(I_WN.EQ.2) THEN
+            COEF(N,K)=(XXK-ONEC)*XXK/((XXK+XK-ONEC)*(XXK+XK))
+          ELSEIF(I_WN.EQ.3) THEN
+            COEF(N,K)=(X-XK+ONEC)/(XXK+ONEC)
+          ELSEIF(I_WN.EQ.4) THEN
+            SUM_1=ZEROC
+            SUM_2=ZEROC
+            DO J=0,K
+              SUM_1=SUM_1+ALPHA*XXK
+              SUM_2=SUM_2+ALPHA*(XXK+ONEC)
+            ENDDO
+            COEF(N,K)=(ALPHA*X+XK-ONEC)*SUM_1/(ALPHA*XXK*SUM_2)
+          ELSEIF(I_WN.EQ.5) THEN
+            COEF(N,K)=ONEC
+          ELSEIF(I_WN.EQ.6) THEN
+            CALL INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+          ENDIF
+C
+        ENDDO
+C
+      ENDDO
+C
+C  Computation of the recurrence relation for numerator
+C                and denominator
+C
+      DO N=N_INI,MAX_N
+C
+C  Starting values
+C
+        NUM(N,0)=SN(N,0)/WN(N)
+        DEN(N,0)=ONEC/WN(N)
+        SN(N,0)=NUM(N,0)/DEN(N,0)
+C
+      ENDDO
+C
+      N_COUNT=0
+C
+      DO K=0,N_APP-1
+C
+        DO N=N_INI,MAX_N-K-1
+C
+          IF(I_WN.NE.6) THEN
+            NUM(N,K+1)=NUM(N+1,K)-COEF(N,K)*NUM(N,K)
+            DEN(N,K+1)=DEN(N+1,K)-COEF(N,K)*DEN(N,K)
+          ELSE
+            NUM(N,K+1)=(NUM(N+1,K)-NUM(N,K))/(XN(N+K+1)-XN(N))
+            DEN(N,K+1)=(DEN(N+1,K)-DEN(N,K))/(XN(N+K+1)-XN(N))
+          ENDIF
+          SN(N,K+1)=NUM(N,K+1)/DEN(N,K+1)
+          N_COUNT=N_COUNT+1
+C
+        ENDDO
+C
+      ENDDO
+C
+      RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE INTERP_POINTS(I_XN,N_APP,ALPHA,BETA,SN,XN)
+C
+C  This subroutine computes the interpolation
+C     points used in some algorithms
+C
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 27 Feb 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M),XN(-1:N_ORD_M)
+      COMPLEX*16 ALPHA,BETA
+C
+      DO N=0,N_APP
+C
+        IF(I_XN.EQ.1) THEN
+          XN(N)=(SN(N+1,0)-SN(N,0))
+        ELSEIF(I_XN.EQ.2) THEN
+          XN(N)=BETA+DFLOAT(N)
+        ELSEIF(I_XN.EQ.3) THEN
+          XN(N)=(BETA+DFLOAT(N))*(SN(N+1,0)-SN(N,0))
+        ELSEIF(I_XN.EQ.4) THEN
+          XN(N)=(BETA+DFLOAT(N))**ALPHA
+        ELSEIF(I_XN.EQ.5) THEN
+          XN(N)=((2.D0**N)/BETA)**ALPHA
+        ENDIF
+C
+      ENDDO
+C
+      RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE REMAIN_SERIES(I_GN,N_APP,SN,XN,GN)
+C
+C  This subroutine computes the G_N series used to describe
+C     the correction on the remainder estimate
+C
+C      I_GN = 1 :  G_{i}(n) = G_{i-1}(n)*x_{n}
+C      I_GN = 2 :  G_{i}(n) = x_{n+i-1} (G transformation)
+C      I_GN = 3 :  G_{i}(n) = DELTA S_{n+i-1} (epsilon alg.)
+C      I_GN = 4 :  G_{i}(n) = G_{i-1}(n)*S_{n}/x_{n}
+C      I_GN = 5 :  G_{i}(n) = G_{i-1}(n)/x_{n}
+C      I_GN = 6 :  G_{i}(n) = (DELTA S_{n})^i (Germain-Bonne)
+C      I_GN = 7 :  G_{i}(n) = x_{n+i-2} (p process)
+C
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 28 Feb 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M),XN(-1:N_ORD_M)
+      COMPLEX*16 GN(-1:N_ORD_M,-1:N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 CNK(-1:3*N_ORD_M,-1:N_ORD_M)
+      COMPLEX*16 SUM_J,MONE,ONE,ZEROC,ONEC
+C
+      ZEROC=(0.D0,0.D0)
+      ONEC=(1.D0,0.D0)
+C
+C  Computing binomial coefficients
+C
+      IF(I_GN.EQ.6) CALL COEFFICIENTS(N_APP,CNK,ZEROC,1)
+C
+      DO N=0,N_APP
+C
+        GN(N,0,-1)=ZEROC
+        GN(N,0,0)=ONEC
+        MONE=-ONEC
+C
+        DO I=1,N_APP
+C
+          IF(I_GN.EQ.1) THEN
+            GN(N,0,I)=GN(N,0,I-1)*XN(N)
+          ELSEIF(I_GN.EQ.2) THEN
+            GN(N,0,I)=XN(N+I-1)
+          ELSEIF(I_GN.EQ.3) THEN
+            GN(N,0,I)=SN(N+I,0)-SN(N+I-1,0)
+          ELSEIF(I_GN.EQ.4) THEN
+            GN(N,0,I)=GN(N,0,I-1)*SN(N,0)/XN(N)
+          ELSEIF(I_GN.EQ.5) THEN
+            GN(N,0,I)=GN(N,0,I-1)/XN(N)
+          ELSEIF(I_GN.EQ.6) THEN
+            MONE=-MONE
+            SUM_J=ZEROC
+            ONE=-ONEC
+            DO J=0,I
+              ONE=-ONE
+              SUM_J=SUM_J+ONE*CNK(I,J)*SN(N+J,0)
+            ENDDO
+            GN(N,0,I)=MONE*SUM_J
+          ELSEIF(I_GN.EQ.7) THEN
+            IF(I.GT.1) THEN
+              GN(N,0,I)=SN(N+I-1,0)-SN(N+I-2,0)
+            ELSE
+              GN(N,0,I)=SN(N,0)
+            ENDIF
+          ENDIF
+C
+        ENDDO
+C
+      ENDDO
+C
+      RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE CHECK_CONV(J_INI,J_FIN,N_TABLE,I_CONV,N_ACC,K_ACC,
+     &K_MAX,N_COEF,I_COL,ACC,RHO,SN)
+C
+C  This subroutine checks the convergence of the acceleration process.
+C  For convergence, there must be a N_TABLE x N_TABLE square in the (n,k) table
+C  of SN(n,k)that contains equal values (SMALL being the accepted error)
+C
+C  This way, both the column convergence (k fixed and n increasing)
+C  and the diagonal convergence (n=k increasing) are considered
+C
+C  Important note: in some algorithms, such as the epsilon one, only
+C                  odd columns are meaningful. If I_COL = 0, all
+C                  columns are taken into account while for I_COL = 2
+C                  only even columns are considered
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 27 Feb 2011
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      COMPLEX*16 SN(-1:N_ORD_M,-1:N_ORD_M)
+C
+      REAL*8 ACC,REF,COMP,RHO
+C
+C  Step for the columns comparison and change of the size
+C    of the square when only even columns should be considered
+C
+      IF(I_COL.EQ.0) THEN
+        I_STEP=1
+        N_SQUARE=N_TABLE
+        N_START=N_TABLE
+      ELSEIF(I_COL.EQ.2) THEN
+        I_STEP=2
+        N_SQUARE=N_TABLE+N_TABLE-1
+        IF(MOD(N_SQUARE,2).EQ.0) THEN
+          N_START=N_SQUARE
+        ELSE
+          N_START=N_SQUARE+1
+        ENDIF
+      ENDIF
+C
+C  Positionning the bottom right corner of the square: (N,K),
+C    starting from (N_START,N_START). If only even columns
+C    should be considered, N_START must be even
+C
+      K_FIN=J_FIN/N_COEF
+      IF(K_FIN.LT.N_START) THEN
+         I_CONV=0
+         GOTO 10
+      ENDIF
+C
+      DO K=N_START,K_FIN+N_START-1,I_STEP
+        IF(K.GT.K_MAX) GOTO 20
+        DO N=N_START,K_FIN-K,I_STEP
+C
+C  Checking the values (N1,K1) in the selected square
+C
+          REF=CDABS(SN(N,K))
+          I_CONV=1
+C
+          DO N1=0,N_START,I_STEP
+            NN=N-N1
+            DO K1=0,N_START,I_STEP
+C
+              KK=K-K1
+              COMP=CDABS(REF-SN(NN,KK))
+              IF(COMP.GT.ACC) THEN
+                I_CONV=0
+              ENDIF
+C
+            ENDDO
+          ENDDO
+C
+          IF(I_CONV.EQ.1) THEN
+C
+C  All values in the square are equal (within ACC):
+C     Spectral radius taken as the left top corner value
+C
+            N_ACC=N-N_START+I_STEP
+            K_ACC=K-N_START+I_STEP
+            RHO=REF
+            GOTO 10
+          ENDIF
+C
+        ENDDO
+  20  CONTINUE
+      ENDDO
+C
+  10  RETURN
+C
+      END
+C
+C=======================================================================
+C
+      SUBROUTINE CONV_SERIES(ACC,N_TABLE,JORD,R_SN,*)
+C
+C  This subroutine checks the convergence of the power method or of
+C  the Rayleigh quotient method at level JORD without convergence
+C  acceleration. For convergence, there must be N_TABLE equal values
+C             (ACC being the accepted error) of SN
+C
+C  Author : D. Sebilleau
+C
+C                                 Last modified : 27 Feb 2013
+C
+C      INCLUDE 'spec.inc'
+C
+      USE DIM_MOD
+C
+      REAL ACC,COMP,R_SN(N_ORD_M)
+C
+      NCONV=0
+      DO J=JORD,JORD-N_TABLE,-1
+        COMP=ABS(R_SN(J)-R_SN(J-1))
+        IF(COMP.LE.ACC) THEN
+          NCONV=NCONV+1
+        ENDIF
+      ENDDO
+C
+      IF(NCONV.EQ.N_TABLE-1) RETURN 1
+C
+      RETURN
+C
+      END

@@ -1,0 +1,72 @@
+#! /bin/bash -f
+echo "                                                 "
+echo "                                                 "
+echo "****************************************************"
+echo "*                                                  *"
+echo "*          CLUSTER GEOMETRY ANALYSIS CODE          *"
+echo "*                                                  *"
+echo "****************************************************"
+echo "                                                 "
+echo "                                                 "
+#
+time -p ./es_mod/Sym_Analys/clus_sym <<Fin >& error.dat
+Cluster.xyz                      #  Input cluster file
+0                                #  Tetrahedra detection 
+0                                #  Octahedra detection
+0                                #  Cube detection
+0                                #  Hollow molecules detection
+0                                #  Nanotube detection
+0                                #  Regular polygons detection
+0                                #  Iregular polygons detection
+1                                #  Symmetries detection
+Fin
+#
+#  Checking for errors in the execution
+#
+cat error.dat | sed -e '1,35d' \
+                    -e '/real/,/    /d' > error.txt
+#
+#  Checking for a blend of dialog
+#
+DIAL=`which dialog | cut -d: -f2 | grep -c 'dialog'`
+XDIA=`which Xdialog | cut -d: -f2 | grep -c 'Xdialog'`
+KDIA=`which kdialog | cut -d: -f2 | grep -c 'kdialog'`
+ZENI=`which zenity | cut -d: -f2 | grep -c 'zenity'`
+#
+if [ "$ZENI" -ne "0" ]; then
+  DIALOG=zenity
+else
+  if [ "$XDIA" -ne "0" ]; then
+    DIALOG=Xdialog
+  else
+    if [ "$KDIA" -ne "0" ]; then
+      DIALOG=kdialog
+    else
+      if [ "$DIAL" -ne "0" ]; then
+        DIALOG=dialog
+      else
+        DIALOG=none
+      fi
+    fi
+  fi
+fi
+#
+FILE=`ls -at | grep .lis | awk '{print $1}'`
+tail --lines=10 $FILE | grep '<<<<' | sed 's/<</  /g' | sed 's/>>/  /g' >> run.txt
+cat run.txt >> error.txt 
+ERR=`cat error.txt`
+NLINE=`cat error.txt | wc -l`
+#
+if [ $NLINE != 0 ]; then
+  if [ "$DIALOG" = "zenity" ]; then
+    zenity --width 400 --height 180 \
+           --title "MsSpec-1.1 runtime error" \
+           --info --text "The code has stopped with the message : \n \n  \n $ERR" \
+           --timeout 5 
+  fi
+fi
+#
+rm -f error.dat error.txt run.txt
+#
+exit
+ 

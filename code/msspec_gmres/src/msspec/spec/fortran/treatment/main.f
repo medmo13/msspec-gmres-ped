@@ -1,0 +1,3 @@
+      SUBROUTINE RUN()
+          CALL COMP_CURVES()
+      END SUBROUTINE RUN

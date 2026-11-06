@@ -1,0 +1,22 @@
+      SUBROUTINE RUN(NATP_M_, NATCLU_M_, NAT_EQ_M_, N_CL_L_M_, 
+     &  NE_M_, NL_M_, LI_M_, NEMET_M_, NO_ST_M_, NDIF_M_, NSO_M_, 
+     &  NTEMP_M_, NODES_EX_M_, NSPIN_M_, NTH_M_, NPH_M_, NDIM_M_, 
+     &  N_TILT_M_, N_ORD_M_, NPATH_M_, NGR_M_)
+
+        USE DIM_MOD
+        IMPLICIT INTEGER (A-Z)
+CF2PY   INTEGER, INTENT(IN,COPY) :: NATP_M_, NATCLU_M_, NAT_EQ_M_, N_CL_L_M_
+CF2PY   INTEGER, INTENT(IN,COPY) :: NE_M_, NL_M_, LI_M_, NEMET_M_, NO_ST_M_, NDIF_M_, NSO_M_ 
+CF2PY   INTEGER, INTENT(IN,COPY) :: NTEMP_M_, NODES_EX_M_, NSPIN_M_, NTH_M_, NPH_M_, NDIM_M_
+CF2PY   INTEGER, INTENT(IN,COPY) :: N_TILT_M_, N_ORD_M_, NPATH_M_, NGR_M_
+
+        CALL ALLOCATION(NATP_M_, NATCLU_M_, NAT_EQ_M_, N_CL_L_M_, 
+     &  NE_M_, NL_M_, LI_M_, NEMET_M_, NO_ST_M_, NDIF_M_, NSO_M_, 
+     &  NTEMP_M_, NODES_EX_M_, NSPIN_M_, NTH_M_, NPH_M_, NDIM_M_, 
+     &  N_TILT_M_, N_ORD_M_, NPATH_M_, NGR_M_)
+
+        CALL DO_MAIN()
+        CALL CLOSE_ALL_FILES()
+
+      end subroutine
+
