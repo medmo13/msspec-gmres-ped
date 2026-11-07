@@ -1,7 +1,7 @@
 # Data and code for "Tree-preconditioned GMRES for the multiple scattering equations of photoelectron diffraction"
 
 Authors: Mohammed Benaissa, Keisuke Hatada, Didier Sébilleau.
-Archived release: <DOI to be filled>. Paper: <to be filled after acceptance>.
+Archived release: https://doi.org/10.5281/zenodo.24024587 (all versions). Paper: <to be filled after acceptance>.
 
 This record holds the solver, the run scripts, the raw results of every run in the paper and the scripts that turn
 them into the numbers, tables and figures. It does not contain the paper text.
@@ -68,5 +68,5 @@ MsSpec copy keeps its own GPL notice (`LICENSE_MsSpec.txt`).
 
 ## Citation
 
-Cite the paper and the archived release (DOI: <to be filled>). `CITATION.cff` has the details.
+Cite the paper and the archived release (DOI 10.5281/zenodo.24024587). `CITATION.cff` has the details.
 

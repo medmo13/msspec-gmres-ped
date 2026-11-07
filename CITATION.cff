@@ -9,3 +9,5 @@ authors:
   - family-names: Sébilleau
     given-names: Didier
 license: GPL-3.0-or-later
+doi: 10.5281/zenodo.24024587
+repository-code: "https://github.com/medmo13/msspec-gmres-ped"
